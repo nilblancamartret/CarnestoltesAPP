@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes FINAL4 ✅</title>
+<title>Carnestoltes FINAL5 ✅</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
@@ -53,6 +53,7 @@
     background: #0070f3;
     color: #fff;
     margin-bottom: 1rem;
+    text-align:center;
   }
   #startBtn.scanning {
     background: #00b800;
@@ -67,6 +68,9 @@
     object-fit: cover;
     display: block;
   }
+
+  /* canvas oculto para leer frames */
+  #captureCanvas { display:none; }
 
   #debugLog {
     font-size: .8rem;
@@ -178,15 +182,18 @@
 <body>
 
 <h1>
-  Carnestoltes FINAL4
+  Carnestoltes FINAL5
   <span class="badge">ONLINE</span>
 </h1>
 
+<!-- Cámara / control -->
 <div class="card">
   <button id="startBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
+  <canvas id="captureCanvas"></canvas>
 </div>
 
+<!-- Panel con la última persona detectada -->
 <div class="card" id="infoCard">
   <div class="row">
     <div class="label">Nom</div>
@@ -215,11 +222,12 @@
   <div class="footer-note" id="dataPagamentNote"></div>
 </div>
 
+<!-- Log/debug -->
 <div class="card">
-  <div id="debugLog">📹 Llista d'esdeveniments…</div>
+  <div id="debugLog">📷 Llista d'esdeveniments…</div>
 </div>
 
-<!-- ZXing UMD build clásica -->
+<!-- ZXing UMD global -->
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 
 <script>
@@ -229,14 +237,15 @@
   // ===== ESTADO =====
   let scanning = false;
   let streamRef = null;
-  let reader = null; // BrowserQRCodeReader
+  let reader = null; // ZXing.BrowserQRCodeReader()
+  let lastShownQR = null;
   let currentQR = null;
   let currentData = null;
-  let lastShownQR = null;
 
   // ===== DOM =====
   const startBtn = document.getElementById('startBtn');
   const preview  = document.getElementById('preview');
+  const captureCanvas = document.getElementById('captureCanvas');
   const debugLog = document.getElementById('debugLog');
 
   const infoCard = document.getElementById('infoCard');
@@ -250,6 +259,7 @@
   const btnObjectesSI = document.getElementById('btnObjectesSI');
   const btnObjectesNO = document.getElementById('btnObjectesNO');
 
+  // ===== UI HELPERS =====
   function log(msg){
     console.log(msg);
     debugLog.textContent += "\n" + msg;
@@ -332,6 +342,7 @@
     renderButtonStates();
   }
 
+  // ===== API CALLS =====
   async function apiLookup(qr) {
     const url = API_BASE + "?action=lookup&qr=" + encodeURIComponent(qr);
     const res = await fetch(url);
@@ -352,8 +363,9 @@
     return res.json();
   }
 
+  // ===== LECTURA QR FRAME A FRAME =====
   async function onQRDetected(qrText) {
-    if (qrText === lastShownQR) return;
+    if (qrText === lastShownQR) return; // evita repintar lo mismo mil veces
     lastShownQR = qrText;
 
     log("QR detectat: " + qrText);
@@ -367,38 +379,47 @@
     }
   }
 
-  // lector contínuo usando decodeOnceFromVideoElement en bucle
-  async function continuousScanTick() {
+  async function scanTick() {
     if (!scanning) return;
 
-    if (!reader) {
-      if (window.ZXing && ZXing.BrowserQRCodeReader) {
-        reader = new ZXing.BrowserQRCodeReader();
-        log("ZXing BrowserQRCodeReader inicialitzat ✅");
-      } else {
-        log("⚠ ZXing encara no disponible…");
-        setTimeout(continuousScanTick, 300);
-        return;
-      }
+    // inicializar el lector si aún no
+    if (!reader && window.ZXing && ZXing.BrowserQRCodeReader) {
+      reader = new ZXing.BrowserQRCodeReader();
+      log("ZXing BrowserQRCodeReader inicialitzat ✅");
     }
 
-    try {
-      // decodeOnceFromVideoElement() intenta leer UNA vez y resuelve cuando encuentra algo
-      const result = await reader.decodeOnceFromVideoElement(preview);
-      if (result && result.text) {
-        onQRDetected(result.text);
+    if (reader) {
+      // Copiamos el frame actual del vídeo a un canvas
+      const w = preview.videoWidth;
+      const h = preview.videoHeight;
+
+      if (w && h) {
+        captureCanvas.width = w;
+        captureCanvas.height = h;
+        const ctx = captureCanvas.getContext('2d');
+        ctx.drawImage(preview, 0, 0, w, h);
+
+        try {
+          // decodeFromImage() acepta un elemento <img> o <canvas>
+          const result = await reader.decodeFromImage(captureCanvas);
+          if (result && result.text) {
+            onQRDetected(result.text);
+          }
+        } catch (err) {
+          // normal si aún no hay QR claro
+        }
       }
-    } catch (err) {
-      // Puede lanzar si no lee nada inmediatamente.
-      // Volvemos a intentar.
+    } else {
+      log("⚠ ZXing encara no disponible…");
     }
 
+    // repetir mientras la cámara siga activa
     if (scanning) {
-      // pequeño delay para no quemar CPU
-      setTimeout(continuousScanTick, 200);
+      setTimeout(scanTick, 200); // ~5 FPS de lectura
     }
   }
 
+  // ===== START/STOP CAMERA =====
   async function startOrStop() {
     if (scanning) {
       // parar
@@ -431,8 +452,8 @@
       await preview.play();
       log("📷 Càmera oberta");
 
-      // empezamos el bucle de lectura continua
-      continuousScanTick();
+      // arrancar el loop de lectura "forzada"
+      scanTick();
 
     } catch (err) {
       log("ERROR càmera: " + err.name + " / " + err.message);
@@ -449,6 +470,7 @@
     }
   }
 
+  // ===== EVENTOS =====
   startBtn.addEventListener('click', startOrStop);
 
   btnPagat.addEventListener('click', async () => {
