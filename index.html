@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes FINAL ✅</title>
+<title>Carnestoltes JM ✅</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
@@ -54,7 +54,6 @@
     color: #fff;
     margin-bottom: 1rem;
   }
-
   #startBtn.scanning {
     background: #00b800;
     color: #000;
@@ -80,10 +79,8 @@
     min-height: 2.5em;
   }
 
-  /* Panel de última lectura */
-  #infoCard {
-    display:none;
-  }
+  /* Panel persona */
+  #infoCard { display:none; }
 
   .row {
     display: flex;
@@ -92,13 +89,11 @@
     margin-bottom: .75rem;
     flex-wrap: wrap;
   }
-
   .label {
     font-size: .8rem;
     color: #aaa;
     flex: 0 0 40%;
   }
-
   .value {
     font-size: 1rem;
     font-weight: 600;
@@ -107,7 +102,6 @@
     text-align: right;
     word-break: break-word;
   }
-
   .qr-code-value {
     font-size: .8rem;
     font-weight: 400;
@@ -123,13 +117,11 @@
     font-weight: 600;
     margin-bottom: .5rem;
   }
-
   .warning-red {
     background: #3a0000;
     color: #ff4d4d;
     border: 1px solid #ff4d4d;
   }
-
   .warning-yellow {
     background: #3a3000;
     color: #ffd84d;
@@ -188,18 +180,18 @@
 <body>
 
 <h1>
-  Carnestoltes FINAL
+  Carnestoltes FINAL2
   <span class="badge">ONLINE</span>
 </h1>
 
-<!-- Sección cámara / escaneo -->
+<!-- Cámara / escaneo -->
 <div class="card">
   <button id="startBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
   <canvas id="framegrab"></canvas>
 </div>
 
-<!-- Panel info última persona -->
+<!-- Panel con la última persona leída -->
 <div class="card" id="infoCard">
   <div class="row">
     <div class="label">Nom</div>
@@ -233,8 +225,9 @@
   <div id="debugLog">📹 Llista d'esdeveniments…</div>
 </div>
 
-<!-- ZXing -->
+<!-- ZXing (lector QR) -->
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
+
 <script>
   // ===== CONFIG =====
   const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
@@ -242,10 +235,10 @@
   // ===== ESTADO =====
   let scanning = false;
   let streamRef = null;
-  let codeReader = null; // la crearemos cuando empiece el escaneo
+  let codeReader = null;
   let currentQR = null;
   let currentData = null;
-  let lastShownQR = null; // para no repintar el mismo QR 20 veces seguidas
+  let lastShownQR = null;
 
   // ===== DOM =====
   const startBtn = document.getElementById('startBtn');
@@ -347,7 +340,7 @@
     renderButtonStates();
   }
 
-  // ===== API =====
+  // ===== API CALLS =====
   async function apiLookup(qr) {
     const url = API_BASE + "?action=lookup&qr=" + encodeURIComponent(qr);
     const res = await fetch(url);
@@ -355,22 +348,21 @@
   }
 
   async function apiSetPagat(qr, value) {
-    const url = API_BASE + "?action=setPagat&qr=" + encodeURIComponent(qr) +
-                "&value=" + encodeURIComponent(value);
+    const url = API_BASE + "?action=setPagat&qr=" +
+      encodeURIComponent(qr) + "&value=" + encodeURIComponent(value);
     const res = await fetch(url);
     return res.json();
   }
 
   async function apiSetObjectes(qr, value) {
-    const url = API_BASE + "?action=setObjectes&qr=" + encodeURIComponent(qr) +
-                "&value=" + encodeURIComponent(value);
+    const url = API_BASE + "?action=setObjectes&qr=" +
+      encodeURIComponent(qr) + "&value=" + encodeURIComponent(value);
     const res = await fetch(url);
     return res.json();
   }
 
-  // ===== ESCANEO =====
+  // ===== ESCANEO LOOP =====
   async function onQRDetected(qrText) {
-    // evita repetir la misma tarjeta mil veces mientras el QR sigue delante
     if (qrText === lastShownQR) return;
     lastShownQR = qrText;
 
@@ -388,9 +380,20 @@
   async function scanLoop() {
     if (!scanning) return;
 
+    // si ZXing no está listo aún, reintenta luego
+    if (!codeReader && typeof ZXing !== "undefined" && ZXing.BrowserMultiFormatReader) {
+      codeReader = new ZXing.BrowserMultiFormatReader();
+      log("Lector ZXing inicialitzat ✅");
+    }
+
+    if (!codeReader) {
+      // ZXing aún cargando, espera al siguiente frame
+      requestAnimationFrame(scanLoop);
+      return;
+    }
+
     const w = preview.videoWidth;
     const h = preview.videoHeight;
-
     if (w && h) {
       const ctx = canvas.getContext('2d');
       canvas.width = w;
@@ -412,51 +415,43 @@
     }
   }
 
-  async function startScanning() {
+  async function startOrStop() {
     if (scanning) {
-      // parar
-      scanning = false;
-      startBtn.classList.remove('scanning');
-      startBtn.textContent = "ESCANEJAR QR";
-      if (streamRef) {
-        streamRef.getTracks().forEach(t => t.stop());
-        streamRef = null;
-      }
-      log("📷 Càmera aturada");
-      return;
+        // parar
+        scanning = false;
+        startBtn.classList.remove('scanning');
+        startBtn.textContent = "ESCANEJAR QR";
+        if (streamRef) {
+          streamRef.getTracks().forEach(t => t.stop());
+          streamRef = null;
+        }
+        log("📷 Càmera aturada");
+        return;
     }
 
     // iniciar
     scanning = true;
     startBtn.classList.add('scanning');
     startBtn.textContent = "CAM ACTIVA (TOCA PER ATURAR)";
-
     log("📷 Obrint càmera...");
 
     try {
-      // pide cámara
       streamRef = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
       });
 
-      // mostrar cámara en <video>
       preview.srcObject = streamRef;
       await preview.play();
       log("📷 Càmera oberta");
 
-      // crear lector ZXing si no existe aún
-      if (!codeReader) {
-        codeReader = new ZXing.BrowserMultiFormatReader();
-      }
-
-      // empezar bucle lectura
+      // empezamos el bucle, que a su vez esperará a ZXing si aún no está
       requestAnimationFrame(scanLoop);
 
     } catch (err) {
       log("ERROR càmera: " + err.name + " / " + err.message);
       alert("No puc obrir càmera: " + err.message);
-      // reset estado
+
       scanning = false;
       startBtn.classList.remove('scanning');
       startBtn.textContent = "ESCANEJAR QR";
@@ -467,8 +462,8 @@
     }
   }
 
-  // ===== EVENTOS BOTONES =====
-  startBtn.addEventListener('click', startScanning);
+  // ===== EVENTOS =====
+  startBtn.addEventListener('click', startOrStop);
 
   btnPagat.addEventListener('click', async () => {
     if (!currentQR) return;
@@ -497,6 +492,7 @@
     currentData = await apiLookup(currentQR);
     renderInfo();
   });
+
 </script>
 </body>
 </html>
