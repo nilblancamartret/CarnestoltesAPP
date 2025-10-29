@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cam Check ✅</title>
+  <style>
+    body {
+      background:#111;
+      color:#fff;
+      font-family: system-ui, sans-serif;
+      padding:1rem;
+    }
+    h1 {
+      text-align:center;
+      font-size:1.2rem;
+      font-weight:600;
+      margin:0 0 1rem;
+      color:#fff;
+    }
+    .card {
+      background:#1e1e1e;
+      border-radius:12px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.6);
+      padding:1rem;
+    }
+    button {
+      width:100%;
+      font-size:1.1rem;
+      font-weight:600;
+      padding:1rem;
+      border-radius:10px;
+      border:0;
+      background:#0070f3;
+      color:#fff;
+    }
+    video {
+      width:100%;
+      border-radius:10px;
+      margin-top:1rem;
+      background:#000;
+      min-height:200px;
+      object-fit:cover;
+    }
+    #status {
+      margin-top:1rem;
+      font-size:.9rem;
+      font-weight:500;
+      color:#0f0;
+      min-height:1.5rem;
+      white-space:pre-line;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cam Check ✅</h1>
+  <div class="card">
+    <button id="openCam">OBRIR CÀMERA</button>
+    <video id="vid" playsinline autoplay muted></video>
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('openCam');
+    const vid = document.getElementById('vid');
+    const statusBox = document.getElementById('status');
+
+    function logStatus(msg){
+      console.log(msg);
+      statusBox.textContent += msg + "\n";
+    }
+
+    async function openCamera(){
+      logStatus("Intentant obrir càmera...");
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false
+        });
+
+        logStatus("✅ Càmera oberta, assignant stream al <video>...");
+        vid.srcObject = stream;
+
+        try {
+          await vid.play();
+          logStatus("▶️ Reproduint vídeo.");
+        } catch (e) {
+          logStatus("⚠️ Error en play(): " + e);
+        }
+
+      } catch(err){
+        logStatus("❌ ERROR getUserMedia: " + err.name + " / " + err.message);
+      }
+    }
+
+    btn.addEventListener('click', openCamera);
+  </script>
+</body>
+</html>
