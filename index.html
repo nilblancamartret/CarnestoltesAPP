@@ -1,156 +1,468 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Carnestoltes ULTRALIGHT ✅</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #111;
-      color: #fff;
-      margin: 0;
-      padding: 1rem;
-    }
-    h1 { text-align: center; font-size: 1.1rem; }
-    video { width: 100%; border-radius: 10px; background: #000; min-height: 200px; }
-    button {
-      width: 100%;
-      padding: 1rem;
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: .5rem;
-      border: none;
-      border-radius: 8px;
-      background: #0070f3;
-      color: #fff;
-    }
-    pre {
-      background: #000;
-      padding: .5rem;
-      border-radius: 8px;
-      font-size: .8rem;
-      color: #0f0;
-      max-height: 6rem;
-      overflow-y: auto;
-    }
-    .info {
-      background: #1e1e1e;
-      border-radius: 8px;
-      padding: 1rem;
-      margin-top: 1rem;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Carnestoltes LIVE ✅</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #111;
+    color: #fff;
+    margin: 0;
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin: 0 0 1rem;
+  }
+  .badge {
+    background: #0a0;
+    color: #000;
+    font-size: .8rem;
+    font-weight: 700;
+    border-radius: .4rem;
+    padding: .1rem .4rem;
+    line-height: 1.2;
+  }
+
+  .scan-card,
+  .panel-card,
+  .log-card {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  }
+
+  button#scanBtn {
+    width: 100%;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 1rem;
+    border-radius: 10px;
+    border: 0;
+    background: #0070f3;
+    color: #fff;
+    margin-bottom: 1rem;
+  }
+  button#scanBtn.scanning {
+    background: #00b800;
+    color: #000;
+  }
+
+  video {
+    width: 100%;
+    border-radius: 10px;
+    background: #000;
+    min-height: 220px;
+    object-fit: cover;
+  }
+
+  canvas { display:none; }
+
+  /* panel info última persona */
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: .75rem;
+    flex-wrap: wrap;
+  }
+  .label {
+    font-size: .8rem;
+    color: #aaa;
+    flex: 0 0 40%;
+  }
+  .value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    flex: 0 0 60%;
+    text-align: right;
+    word-break: break-word;
+  }
+  .qr-code-value {
+    font-size: .8rem;
+    font-weight: 400;
+    color: #888;
+    text-align: right;
+    word-break: break-word;
+  }
+
+  .warning-box {
+    border-radius: 8px;
+    padding: .6rem .75rem;
+    font-size: .9rem;
+    font-weight: 600;
+    margin-bottom: .5rem;
+  }
+  .warning-red {
+    background: #3a0000;
+    color: #ff4d4d;
+    border: 1px solid #ff4d4d;
+  }
+  .warning-yellow {
+    background: #3a3000;
+    color: #ffd84d;
+    border: 1px solid #ffd84d;
+  }
+
+  .section-title {
+    font-size: .9rem;
+    font-weight: 600;
+    color: #ccc;
+    margin: .75rem 0 .5rem;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: .5rem;
+  }
+  .state-btn {
+    flex: 1 1 calc(50% - .5rem);
+    min-width: calc(50% - .5rem);
+    font-size: .9rem;
+    font-weight: 600;
+    border: 0;
+    border-radius: 8px;
+    padding: .9rem .5rem;
+    color: #fff;
+    text-align: center;
+  }
+  .verde {
+    background: #064d06;
+  }
+  .verde.active {
+    background: #00b800;
+    color: #000;
+  }
+  .rojo {
+    background: #4d0606;
+  }
+  .rojo.active {
+    background: #d60000;
+  }
+
+  .footer-note {
+    font-size: .7rem;
+    color: #999;
+    text-align: center;
+    margin-top: .5rem;
+  }
+
+  #debugLog {
+    font-size: .8rem;
+    line-height: 1.4;
+    color: #0f0;
+    font-family: monospace;
+    white-space: pre-line;
+  }
+</style>
 </head>
 <body>
-  <h1>Carnestoltes ULTRALIGHT ✅</h1>
 
+<h1>
+  Carnestoltes LIVE
+  <span class="badge">RUN</span>
+</h1>
+
+<div class="scan-card">
   <button id="scanBtn">ESCANEJAR QR</button>
-  <video id="video" playsinline autoplay muted></video>
-  <canvas id="canvas" style="display:none;"></canvas>
-  <pre id="log"></pre>
+  <video id="preview" playsinline autoplay muted></video>
+  <canvas id="framegrab"></canvas>
+</div>
 
-  <div class="info" id="info" style="display:none;">
-    <p><b>QR:</b> <span id="qrText"></span></p>
-    <p><b>Nom:</b> <span id="nom"></span></p>
-    <p><b>Pagat:</b> <span id="pagat"></span></p>
-    <p><b>Objectes:</b> <span id="objectes"></span></p>
+<div class="panel-card" id="infoCard" style="display:none;">
+  <div class="row">
+    <div class="label">Nom</div>
+    <div class="value" id="nomValue">-</div>
   </div>
 
-  <!-- jsQR ligero -->
-  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-  <script>
-    const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
+  <div class="row">
+    <div class="label">QR</div>
+    <div class="qr-code-value" id="qrValue">(sense)</div>
+  </div>
 
-    const scanBtn = document.getElementById("scanBtn");
-    const video = document.getElementById("video");
-    const canvas = document.getElementById("canvas");
-    const logBox = document.getElementById("log");
-    const infoBox = document.getElementById("info");
-    const qrText = document.getElementById("qrText");
-    const nom = document.getElementById("nom");
-    const pagat = document.getElementById("pagat");
-    const objectes = document.getElementById("objectes");
+  <div id="alertContainer"></div>
 
-    let scanning = false;
-    let stream = null;
-    let ctx = canvas.getContext("2d");
+  <div class="section-title">Pagament</div>
+  <div class="btn-row">
+    <button class="state-btn verde" id="btnPagat">Pagat</button>
+    <button class="state-btn rojo" id="btnNoPagat">No pagat</button>
+  </div>
 
-    function log(msg) {
-      console.log(msg);
-      logBox.textContent += msg + "\n";
-      logBox.scrollTop = logBox.scrollHeight;
+  <div class="section-title">Objectes</div>
+  <div class="btn-row">
+    <button class="state-btn verde" id="btnObjectesSI">Objectes entregats</button>
+    <button class="state-btn rojo" id="btnObjectesNO">Objectes NO entregats</button>
+  </div>
+
+  <div class="footer-note" id="dataPagamentNote"></div>
+</div>
+
+<div class="log-card">
+  <div id="debugLog">📹 Esperant…</div>
+</div>
+
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
+<script>
+  // CONFIG
+  const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
+
+  // Estado
+  let scanning = false;
+  let streamRef = null;
+  let currentQR = null;
+  let currentData = null;
+  let lastDecoded = null; // para no repetir la misma persona en bucle
+
+  const codeReader = new ZXing.BrowserMultiFormatReader();
+
+  // DOM refs
+  const scanBtn = document.getElementById('scanBtn');
+  const preview = document.getElementById('preview');
+  const canvas = document.getElementById('framegrab');
+  const debugLog = document.getElementById('debugLog');
+
+  const infoCard = document.getElementById('infoCard');
+  const nomValue = document.getElementById('nomValue');
+  const qrValue = document.getElementById('qrValue');
+  const alertContainer = document.getElementById('alertContainer');
+  const dataPagamentNote = document.getElementById('dataPagamentNote');
+
+  const btnPagat = document.getElementById('btnPagat');
+  const btnNoPagat = document.getElementById('btnNoPagat');
+  const btnObjectesSI = document.getElementById('btnObjectesSI');
+  const btnObjectesNO = document.getElementById('btnObjectesNO');
+
+  function log(msg){
+    console.log(msg);
+    debugLog.textContent += "\n" + msg;
+    debugLog.scrollTop = debugLog.scrollHeight;
+  }
+
+  function setDebug(msg){
+    debugLog.textContent = msg;
+  }
+
+  function renderButtonStates() {
+    if (currentData && currentData.pagat === true) {
+      btnPagat.classList.add('active');
+      btnNoPagat.classList.remove('active');
+    } else {
+      btnPagat.classList.remove('active');
+      btnNoPagat.classList.add('active');
+    }
+    if (currentData && currentData.objectesEntregats === true) {
+      btnObjectesSI.classList.add('active');
+      btnObjectesNO.classList.remove('active');
+    } else {
+      btnObjectesSI.classList.remove('active');
+      btnObjectesNO.classList.add('active');
+    }
+  }
+
+  function renderAlerts() {
+    alertContainer.innerHTML = "";
+    if (!currentData) return;
+
+    if (currentData.found === false) {
+      const div = document.createElement('div');
+      div.className = "warning-box warning-red";
+      div.textContent = "❌ QR inexistent";
+      alertContainer.appendChild(div);
+      return;
     }
 
-    async function lookup(qr) {
-      const res = await fetch(`${API_BASE}?action=lookup&qr=${encodeURIComponent(qr)}`);
-      return res.json();
+    if (!currentData.nom || currentData.nom.trim() === "") {
+      const div = document.createElement('div');
+      div.className = "warning-box warning-yellow";
+      div.textContent = "⚠ Sense nom associat";
+      alertContainer.appendChild(div);
     }
 
-    async function startScan() {
-      if (scanning) return;
-      scanning = true;
-      scanBtn.textContent = "ESCANEJANT...";
+    if (currentData.warningReutilitzat === true) {
+      const div = document.createElement('div');
+      div.className = "warning-box warning-red";
+      div.textContent = "❌ QR reutilitzat fa poc (possible còpia)";
+      alertContainer.appendChild(div);
+    }
+  }
+
+  function renderInfoCard() {
+    if (!currentData) return;
+
+    infoCard.style.display = "block";
+
+    if (currentData.found === false) {
+      nomValue.textContent = "-";
+      qrValue.textContent = currentQR || "(sense)";
+      dataPagamentNote.textContent = "";
+      renderAlerts();
+      renderButtonStates();
+      return;
+    }
+
+    nomValue.textContent = currentData.nom || "(sense nom)";
+    qrValue.textContent = currentQR || "(sense)";
+
+    if (currentData.pagat && currentData.dataPagament) {
+      dataPagamentNote.textContent = "Pagat el " + currentData.dataPagament;
+    } else {
+      dataPagamentNote.textContent = "";
+    }
+
+    renderAlerts();
+    renderButtonStates();
+  }
+
+  async function apiLookup(qr) {
+    const url = `${API_BASE}?action=lookup&qr=${encodeURIComponent(qr)}`;
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  async function apiSetPagat(qr, value) {
+    const url = `${API_BASE}?action=setPagat&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  async function apiSetObjectes(qr, value) {
+    const url = `${API_BASE}?action=setObjectes&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  async function handleScannedCode(qrText){
+    if (qrText === lastDecoded) {
+      // mismo código repetido en frames seguidos -> ignora para no spamear
+      return;
+    }
+    lastDecoded = qrText;
+
+    log(`QR detectat: ${qrText}`);
+
+    currentQR = qrText;
+    currentData = await apiLookup(qrText);
+
+    renderInfoCard();
+  }
+
+  // bucle continuo: lee frame por frame SIN parar cámara
+  async function frameLoop() {
+    if (!scanning) return;
+
+    const w = preview.videoWidth;
+    const h = preview.videoHeight;
+    if (w && h) {
+      const ctx = canvas.getContext('2d');
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(preview, 0, 0, w, h);
 
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        video.srcObject = stream;
-        await video.play();
-        log("🎥 Càmera oberta");
-
-        requestAnimationFrame(tick);
-      } catch (err) {
-        log("❌ Error càmera: " + err.message);
-        scanning = false;
-      }
-    }
-
-    function stopScan() {
-      scanning = false;
-      scanBtn.textContent = "ESCANEJAR QR";
-      if (stream) {
-        stream.getTracks().forEach(t => t.stop());
-        stream = null;
-      }
-    }
-
-    async function tick() {
-      if (!scanning) return;
-
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height);
-
-        if (code) {
-          const qr = code.data.trim();
-          log("QR detectat: " + qr);
-          stopScan();
-
-          const data = await lookup(qr);
-          log("Resposta: " + JSON.stringify(data));
-
-          qrText.textContent = qr;
-          nom.textContent = data.nom || "-";
-          pagat.textContent = data.pagat ? "✅ SI" : "❌ NO";
-          objectes.textContent = data.objectesEntregats ? "✅ ENTREGATS" : "❌ NO";
-
-          infoBox.style.display = "block";
-          return;
+        const result = await codeReader.decodeFromCanvas(canvas);
+        if (result && result.getText) {
+          handleScannedCode(result.getText());
         }
+      } catch (err) {
+        // normal cuando no hay QR claro en ese frame
       }
-      requestAnimationFrame(tick);
     }
 
-    scanBtn.addEventListener("click", () => {
-      if (scanning) {
-        stopScan();
-      } else {
-        startScan();
-      }
-    });
-  </script>
+    if (scanning) {
+      requestAnimationFrame(frameLoop);
+    }
+  }
+
+  async function startScanning(){
+    if (scanning) return;
+    scanning = true;
+    scanBtn.classList.add('scanning');
+    scanBtn.textContent = "ESCANEJANT (CAM ACTIVA)";
+    setDebug("📹 Obrint càmera...");
+
+    try {
+      streamRef = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false
+      });
+      preview.srcObject = streamRef;
+      await preview.play();
+      log("📹 Càmera oberta");
+
+      // empezamos bucle
+      requestAnimationFrame(frameLoop);
+
+    } catch(err){
+      log("ERROR càmera: " + err.name + " / " + err.message);
+      alert("No puc obrir càmera: " + err.message);
+      stopScanning();
+    }
+  }
+
+  function stopScanning(){
+    if (!scanning) return;
+    scanning = false;
+    scanBtn.classList.remove('scanning');
+    scanBtn.textContent = "ESCANEJAR QR";
+
+    if (streamRef){
+      streamRef.getTracks().forEach(t => t.stop());
+      streamRef = null;
+    }
+    setDebug("📹 Aturada");
+  }
+
+  // UI events
+  scanBtn.addEventListener('click', () => {
+    if (scanning) {
+      stopScanning();
+    } else {
+      startScanning();
+    }
+  });
+
+  btnPagat.addEventListener('click', async () => {
+    if (!currentQR) return;
+    await apiSetPagat(currentQR, "SI");
+    currentData = await apiLookup(currentQR);
+    renderInfoCard();
+  });
+
+  btnNoPagat.addEventListener('click', async () => {
+    if (!currentQR) return;
+    await apiSetPagat(currentQR, "NO");
+    currentData = await apiLookup(currentQR);
+    renderInfoCard();
+  });
+
+  btnObjectesSI.addEventListener('click', async () => {
+    if (!currentQR) return;
+    await apiSetObjectes(currentQR, "SI");
+    currentData = await apiLookup(currentQR);
+    renderInfoCard();
+  });
+
+  btnObjectesNO.addEventListener('click', async () => {
+    if (!currentQR) return;
+    await apiSetObjectes(currentQR, "NO");
+    currentData = await apiLookup(currentQR);
+    renderInfoCard();
+  });
+</script>
 </body>
 </html>
