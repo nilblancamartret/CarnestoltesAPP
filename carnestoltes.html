@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Carnestoltes Control</title>
+  <title>Carnestoltes v3 ✅</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -49,6 +49,7 @@
       min-height: 200px;
       object-fit: cover;
     }
+    canvas { display:none; }
     .row {
       display: flex;
       justify-content: space-between;
@@ -147,11 +148,12 @@
 </head>
 <body>
 
-  <h1>Carnestoltes · Control Accés / Entrega</h1>
+  <h1>Carnestoltes v3 ✅</h1>
 
   <div class="scan-section">
     <button id="scanBtn" class="main-scan">ESCANEJAR QR</button>
     <video id="preview" playsinline autoplay muted></video>
+    <canvas id="framegrab"></canvas>
     <div id="debugLog"></div>
   </div>
 
@@ -183,9 +185,7 @@
     <div class="footer-note" id="dataPagamentNote"></div>
   </div>
 
-  <!-- ZXing -->
   <script src="https://unpkg.com/@zxing/browser@latest"></script>
-
   <script>
     const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
@@ -193,10 +193,12 @@
     let streamRef = null;
     let currentQR = null;
     let currentData = null;
+
     const codeReader = new ZXing.BrowserMultiFormatReader();
 
     const scanBtn = document.getElementById('scanBtn');
     const preview = document.getElementById('preview');
+    const canvas = document.getElementById('framegrab');
     const debugLog = document.getElementById('debugLog');
 
     const infoCard = document.getElementById('infoCard');
@@ -308,28 +310,38 @@
 
     async function handleScannedCode(qrText){
       log("QR detectat: " + qrText);
-      stopScanning(); // paramos el loop y cámara en cuanto pillemos un código
+      stopScanning();
       currentQR = qrText;
       currentData = await apiLookup(qrText);
       log("Resposta lookup: " + JSON.stringify(currentData));
       renderInfoCard();
     }
 
-    // loop de lectura continua sobre el <video>
-    async function scanLoop() {
+    // bucle manual: copiamos frame del <video> a <canvas>, ZXing intenta leerlo
+    async function frameLoop() {
       if (!scanning) return;
-      try {
-        const result = await codeReader.decodeOnceFromVideoElement(preview);
-        if (result && result.getText) {
-          handleScannedCode(result.getText());
-          return;
+
+      const w = preview.videoWidth;
+      const h = preview.videoHeight;
+      if (w && h) {
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(preview, 0, 0, w, h);
+
+        try {
+          const result = await codeReader.decodeFromCanvas(canvas);
+          if (result && result.getText) {
+            handleScannedCode(result.getText());
+            return;
+          }
+        } catch (err) {
+          // normal: si no hay QR visible lanza error
         }
-      } catch (err) {
-        // decodeOnceFromVideoElement lanza excepción si aún no ve código
       }
-      // seguimos intentando mientras siga en modo scanning
+
       if (scanning) {
-        requestAnimationFrame(scanLoop);
+        requestAnimationFrame(frameLoop);
       }
     }
 
@@ -339,7 +351,7 @@
       scanBtn.classList.add('active');
       scanBtn.textContent = "ESCANEJANT...";
 
-      log("Obrint càmera amb getUserMedia...");
+      log("Obrint càmera...");
       try {
         streamRef = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal:"environment" } },
@@ -347,9 +359,8 @@
         });
         preview.srcObject = streamRef;
         await preview.play().catch(e => log("video.play error: " + e));
-
-        log("Càmera oberta. Iniciant loop de lectura QR...");
-        requestAnimationFrame(scanLoop);
+        log("Càmera oberta, iniciant lectura frame a frame...");
+        requestAnimationFrame(frameLoop);
 
       } catch(err){
         log("ERROR obrint càmera: " + err.name + " / " + err.message);
@@ -365,13 +376,11 @@
       scanBtn.textContent = "ESCANEJAR QR";
 
       if (streamRef){
-        // apagar cámara
         streamRef.getTracks().forEach(t => t.stop());
         streamRef = null;
       }
     }
 
-    // Botón toggle
     scanBtn.addEventListener('click', () => {
       if (scanning) {
         stopScanning();
@@ -380,7 +389,6 @@
       }
     });
 
-    // Botones de estado
     btnPagat.addEventListener('click', async () => {
       if (!currentQR) return;
       await apiSetPagat(currentQR, "SI");
