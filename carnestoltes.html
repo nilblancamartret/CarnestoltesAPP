@@ -12,7 +12,6 @@
       margin: 0;
       padding: 1rem;
     }
-
     h1 {
       font-size: 1.2rem;
       font-weight: 600;
@@ -20,15 +19,14 @@
       color: #fff;
       text-align: center;
     }
-
-    .scan-section {
+    .scan-section,
+    .info-card {
       background: #1e1e1e;
       border-radius: 12px;
       padding: 1rem;
       margin-bottom: 1rem;
       box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
-
     button.main-scan {
       width: 100%;
       font-size: 1.1rem;
@@ -39,27 +37,18 @@
       background: #444;
       color: #fff;
     }
-
     button.main-scan.active {
       background: #0070f3;
       color: #fff;
     }
-
     video {
       width: 100%;
       border-radius: 10px;
       margin-top: 1rem;
       background: #000;
+      min-height: 200px;
+      object-fit: cover;
     }
-
-    .info-card {
-      background: #1e1e1e;
-      border-radius: 12px;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    }
-
     .row {
       display: flex;
       justify-content: space-between;
@@ -67,13 +56,11 @@
       margin-bottom: .75rem;
       flex-wrap: wrap;
     }
-
     .label {
       font-size: .8rem;
       color: #aaa;
       flex: 0 0 40%;
     }
-
     .value {
       font-size: 1rem;
       font-weight: 600;
@@ -82,7 +69,13 @@
       text-align: right;
       word-break: break-word;
     }
-
+    .qr-code-value {
+      font-size: .8rem;
+      font-weight: 400;
+      color: #888;
+      word-break: break-word;
+      text-align: right;
+    }
     .warning-box {
       border-radius: 8px;
       padding: .75rem;
@@ -90,32 +83,27 @@
       font-weight: 600;
       margin-top: .5rem;
     }
-
     .warning-red {
       background: #3a0000;
       color: #ff4d4d;
       border: 1px solid #ff4d4d;
     }
-
     .warning-yellow {
       background: #3a3000;
       color: #ffd84d;
       border: 1px solid #ffd84d;
     }
-
     .section-title {
       font-size: .9rem;
       font-weight: 600;
       color: #ccc;
       margin: 1rem 0 .5rem;
     }
-
     .btn-row {
       display: flex;
       gap: .5rem;
       flex-wrap: wrap;
     }
-
     .state-btn {
       flex: 1 1 calc(50% - .5rem);
       min-width: calc(50% - .5rem);
@@ -126,8 +114,6 @@
       padding: .9rem .5rem;
       color: #fff;
     }
-
-    /* colores de los botones */
     .verde {
       background: #064d06;
     }
@@ -140,20 +126,22 @@
     .rojo.active {
       background: #d60000;
     }
-
     .footer-note {
       font-size: .7rem;
       color: #555;
       text-align: center;
       margin-top: 2rem;
     }
-
-    .qr-code-value {
-      font-size: .8rem;
-      font-weight: 400;
+    #debugLog {
+      font-size: .7rem;
       color: #888;
-      word-break: break-word;
-      text-align: right;
+      white-space: pre-line;
+      background: #000;
+      padding: .5rem;
+      border-radius: 6px;
+      max-height: 6rem;
+      overflow-y: auto;
+      margin-top: .75rem;
     }
   </style>
 </head>
@@ -163,7 +151,8 @@
 
   <div class="scan-section">
     <button id="scanBtn" class="main-scan">ESCANEJAR QR</button>
-    <video id="preview" playsinline></video>
+    <video id="preview" playsinline autoplay muted></video>
+    <div id="debugLog"></div>
   </div>
 
   <div class="info-card" id="infoCard" style="display:none;">
@@ -194,21 +183,21 @@
     <div class="footer-note" id="dataPagamentNote"></div>
   </div>
 
-  <!-- ZXing QR reader via CDN -->
+  <!-- ZXing -->
   <script src="https://unpkg.com/@zxing/browser@latest"></script>
 
   <script>
-    // >>>>> CONFIGURA AQUÍ TU URL DEL SCRIPT <<<<<
     const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
-    // Estado actual tras el último escaneo
+    let scanning = false;
+    let streamRef = null;
     let currentQR = null;
     let currentData = null;
-    let codeReader = null;
-    let isScanning = false;
+    const codeReader = new ZXing.BrowserMultiFormatReader();
 
     const scanBtn = document.getElementById('scanBtn');
     const preview = document.getElementById('preview');
+    const debugLog = document.getElementById('debugLog');
 
     const infoCard = document.getElementById('infoCard');
     const nomValue = document.getElementById('nomValue');
@@ -221,205 +210,204 @@
     const btnObjectesSI = document.getElementById('btnObjectesSI');
     const btnObjectesNO = document.getElementById('btnObjectesNO');
 
-    // marca visual de botones activo/inactivo
-    function renderButtonStates() {
-        // Pagat
-        if (currentData && currentData.pagat === true) {
-            btnPagat.classList.add('active');
-            btnNoPagat.classList.remove('active');
-        } else {
-            btnPagat.classList.remove('active');
-            btnNoPagat.classList.add('active');
-        }
-
-        // ObjectesEntregats
-        if (currentData && currentData.objectesEntregats === true) {
-            btnObjectesSI.classList.add('active');
-            btnObjectesNO.classList.remove('active');
-        } else {
-            btnObjectesSI.classList.remove('active');
-            btnObjectesNO.classList.add('active');
-        }
+    function log(msg){
+      console.log(msg);
+      debugLog.textContent += msg + "\n";
     }
 
-    // muestra alertas (sospechoso, no trobat, sense nom...)
+    function renderButtonStates() {
+      if (currentData && currentData.pagat === true) {
+        btnPagat.classList.add('active');
+        btnNoPagat.classList.remove('active');
+      } else {
+        btnPagat.classList.remove('active');
+        btnNoPagat.classList.add('active');
+      }
+      if (currentData && currentData.objectesEntregats === true) {
+        btnObjectesSI.classList.add('active');
+        btnObjectesNO.classList.remove('active');
+      } else {
+        btnObjectesSI.classList.remove('active');
+        btnObjectesNO.classList.add('active');
+      }
+    }
+
     function renderAlerts() {
-        alertContainer.innerHTML = "";
+      alertContainer.innerHTML = "";
+      if (!currentData) return;
 
-        if (!currentData) return;
+      if (currentData.found === false) {
+        const div = document.createElement('div');
+        div.className = "warning-box warning-red";
+        div.textContent = "❌ QR inexistent";
+        alertContainer.appendChild(div);
+        return;
+      }
 
-        if (currentData.found === false) {
-            // QR no existe
-            const div = document.createElement('div');
-            div.className = "warning-box warning-red";
-            div.textContent = "❌ QR inexistent";
-            alertContainer.appendChild(div);
-            return;
-        }
+      if (!currentData.nom || currentData.nom.trim() === "") {
+        const div = document.createElement('div');
+        div.className = "warning-box warning-yellow";
+        div.textContent = "⚠ Sense nom associat";
+        alertContainer.appendChild(div);
+      }
 
-        if (!currentData.nom || currentData.nom.trim() === "") {
-            const div = document.createElement('div');
-            div.className = "warning-box warning-yellow";
-            div.textContent = "⚠ Sense nom associat";
-            alertContainer.appendChild(div);
-        }
-
-        if (currentData.warningReutilitzat === true) {
-            const div = document.createElement('div');
-            div.className = "warning-box warning-red";
-            div.textContent = "❌ QR reutilitzat fa poc (possible còpia)";
-            alertContainer.appendChild(div);
-        }
+      if (currentData.warningReutilitzat === true) {
+        const div = document.createElement('div');
+        div.className = "warning-box warning-red";
+        div.textContent = "❌ QR reutilitzat fa poc (possible còpia)";
+        alertContainer.appendChild(div);
+      }
     }
 
     function renderInfoCard() {
-        if (!currentData) {
-            infoCard.style.display = "none";
-            return;
-        }
+      if (!currentData) {
+        infoCard.style.display = "none";
+        return;
+      }
+      infoCard.style.display = "block";
 
-        infoCard.style.display = "block";
-
-        if (currentData.found === false) {
-            nomValue.textContent = "-";
-            qrValue.textContent = currentQR || "(sense)";
-            dataPagamentNote.textContent = "";
-            renderAlerts();
-            renderButtonStates();
-            return;
-        }
-
-        nomValue.textContent = currentData.nom || "(sense nom)";
+      if (currentData.found === false) {
+        nomValue.textContent = "-";
         qrValue.textContent = currentQR || "(sense)";
-
-        if (currentData.pagat && currentData.dataPagament) {
-            dataPagamentNote.textContent = "Pagat el " + currentData.dataPagament;
-        } else {
-            dataPagamentNote.textContent = "";
-        }
-
+        dataPagamentNote.textContent = "";
         renderAlerts();
         renderButtonStates();
+        return;
+      }
+
+      nomValue.textContent = currentData.nom || "(sense nom)";
+      qrValue.textContent = currentQR || "(sense)";
+
+      if (currentData.pagat && currentData.dataPagament) {
+        dataPagamentNote.textContent = "Pagat el " + currentData.dataPagament;
+      } else {
+        dataPagamentNote.textContent = "";
+      }
+
+      renderAlerts();
+      renderButtonStates();
     }
 
-    // Llamadas a la API
     async function apiLookup(qr) {
-        const url = `${API_BASE}?action=lookup&qr=${encodeURIComponent(qr)}`;
-        const res = await fetch(url);
-        return res.json();
+      const url = `${API_BASE}?action=lookup&qr=${encodeURIComponent(qr)}`;
+      const res = await fetch(url);
+      return res.json();
     }
 
     async function apiSetPagat(qr, value) {
-        // value debe ser "SI" o "NO"
-        const url = `${API_BASE}?action=setPagat&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
-        const res = await fetch(url);
-        return res.json();
+      const url = `${API_BASE}?action=setPagat&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
+      const res = await fetch(url);
+      return res.json();
     }
 
     async function apiSetObjectes(qr, value) {
-        // value debe ser "SI" o "NO"
-        const url = `${API_BASE}?action=setObjectes&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
-        const res = await fetch(url);
-        return res.json();
+      const url = `${API_BASE}?action=setObjectes&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
+      const res = await fetch(url);
+      return res.json();
     }
 
-    // Cuando escaneamos un QR válido:
-    async function handleScannedCode(qrText) {
-        stopScanning(); // cerramos cámara en cuanto leemos uno
-        currentQR = qrText;
-        currentData = await apiLookup(qrText);
-        renderInfoCard();
+    async function handleScannedCode(qrText){
+      log("QR detectat: " + qrText);
+      stopScanning(); // paramos el loop y cámara en cuanto pillemos un código
+      currentQR = qrText;
+      currentData = await apiLookup(qrText);
+      log("Resposta lookup: " + JSON.stringify(currentData));
+      renderInfoCard();
     }
+
+    // loop de lectura continua sobre el <video>
+    async function scanLoop() {
+      if (!scanning) return;
+      try {
+        const result = await codeReader.decodeOnceFromVideoElement(preview);
+        if (result && result.getText) {
+          handleScannedCode(result.getText());
+          return;
+        }
+      } catch (err) {
+        // decodeOnceFromVideoElement lanza excepción si aún no ve código
+      }
+      // seguimos intentando mientras siga en modo scanning
+      if (scanning) {
+        requestAnimationFrame(scanLoop);
+      }
+    }
+
+    async function startScanning(){
+      if (scanning) return;
+      scanning = true;
+      scanBtn.classList.add('active');
+      scanBtn.textContent = "ESCANEJANT...";
+
+      log("Obrint càmera amb getUserMedia...");
+      try {
+        streamRef = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal:"environment" } },
+          audio: false
+        });
+        preview.srcObject = streamRef;
+        await preview.play().catch(e => log("video.play error: " + e));
+
+        log("Càmera oberta. Iniciant loop de lectura QR...");
+        requestAnimationFrame(scanLoop);
+
+      } catch(err){
+        log("ERROR obrint càmera: " + err.name + " / " + err.message);
+        alert("No puc obrir càmera: " + err.message);
+        stopScanning();
+      }
+    }
+
+    function stopScanning(){
+      if (!scanning) return;
+      scanning = false;
+      scanBtn.classList.remove('active');
+      scanBtn.textContent = "ESCANEJAR QR";
+
+      if (streamRef){
+        // apagar cámara
+        streamRef.getTracks().forEach(t => t.stop());
+        streamRef = null;
+      }
+    }
+
+    // Botón toggle
+    scanBtn.addEventListener('click', () => {
+      if (scanning) {
+        stopScanning();
+      } else {
+        startScanning();
+      }
+    });
 
     // Botones de estado
     btnPagat.addEventListener('click', async () => {
-        if (!currentQR) return;
-        await apiSetPagat(currentQR, "SI");
-        currentData = await apiLookup(currentQR);
-        renderInfoCard();
+      if (!currentQR) return;
+      await apiSetPagat(currentQR, "SI");
+      currentData = await apiLookup(currentQR);
+      renderInfoCard();
     });
 
     btnNoPagat.addEventListener('click', async () => {
-        if (!currentQR) return;
-        await apiSetPagat(currentQR, "NO");
-        currentData = await apiLookup(currentQR);
-        renderInfoCard();
+      if (!currentQR) return;
+      await apiSetPagat(currentQR, "NO");
+      currentData = await apiLookup(currentQR);
+      renderInfoCard();
     });
 
     btnObjectesSI.addEventListener('click', async () => {
-        if (!currentQR) return;
-        await apiSetObjectes(currentQR, "SI");
-        currentData = await apiLookup(currentQR);
-        renderInfoCard();
+      if (!currentQR) return;
+      await apiSetObjectes(currentQR, "SI");
+      currentData = await apiLookup(currentQR);
+      renderInfoCard();
     });
 
     btnObjectesNO.addEventListener('click', async () => {
-        if (!currentQR) return;
-        await apiSetObjectes(currentQR, "NO");
-        currentData = await apiLookup(currentQR);
-        renderInfoCard();
+      if (!currentQR) return;
+      await apiSetObjectes(currentQR, "NO");
+      currentData = await apiLookup(currentQR);
+      renderInfoCard();
     });
-
-    // Escaneo con cámara usando ZXing
-    async function startScanning() {
-        if (isScanning) return;
-        isScanning = true;
-        scanBtn.classList.add('active');
-        scanBtn.textContent = "ESCANEJANT...";
-
-        // Instanciamos el lector
-        codeReader = new ZXing.BrowserMultiFormatReader();
-
-        try {
-            // Pedimos cámara trasera si existe
-            const videoInputDevices = await codeReader.listVideoInputDevices();
-            let deviceId = null;
-
-            // buscar cámara trasera tipo "back"
-            const backCam = videoInputDevices.find(d => /back|rear|tràs|trás|environment/i.test(d.label));
-            if (backCam) {
-                deviceId = backCam.deviceId;
-            } else if (videoInputDevices[0]) {
-                deviceId = videoInputDevices[0].deviceId;
-            }
-
-            await codeReader.decodeFromVideoDevice(deviceId, preview, (result, err) => {
-                if (result) {
-                    // en cuanto detectamos un código, paramos y procesamos
-                    handleScannedCode(result.getText());
-                }
-                // err es ruido normal cuando todavía no leyó nada
-            });
-
-        } catch (err) {
-            console.error("Error iniciant càmera: ", err);
-            alert("No s'ha pogut obrir la càmera. Dona permís de càmera al navegador.");
-            stopScanning();
-        }
-    }
-
-    function stopScanning() {
-        if (!isScanning) return;
-        isScanning = false;
-        scanBtn.classList.remove('active');
-        scanBtn.textContent = "ESCANEJAR QR";
-
-        if (codeReader) {
-            codeReader.reset();
-            codeReader = null;
-        }
-        // ocultar el último frame del vídeo si quieres:
-        // preview.srcObject = null;
-    }
-
-    scanBtn.addEventListener('click', () => {
-        if (isScanning) {
-            stopScanning();
-        } else {
-            startScanning();
-        }
-    });
-
   </script>
 </body>
 </html>
