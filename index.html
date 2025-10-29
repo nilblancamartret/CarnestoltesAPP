@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes BARCODE ✅</title>
+<title>Carnestoltes CONTROL ✅</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
@@ -72,16 +72,17 @@
   canvas { display:none; }
 
   #debugLog {
-    font-size: .8rem;
+    font-size: .75rem;
     line-height: 1.4;
     color: #0f0;
     font-family: monospace;
     white-space: pre-line;
     min-height: 3em;
-    max-height: 10em;
+    max-height: 8em;
     overflow-y: auto;
   }
 
+  /* Tarjeta info fixa sota la càmera */
   #infoCard { display:none; }
 
   .row {
@@ -140,30 +141,33 @@
     margin: .75rem 0 .5rem;
   }
 
-  .btn-row {
+  .btn-col {
     display: flex;
-    gap: .5rem;
-    flex-wrap: wrap;
-    margin-bottom: .5rem;
+    flex-direction: column;
+    gap: .75rem;
+    width: 100%;
   }
 
   .state-btn {
-    flex: 1 1 calc(50% - .5rem);
-    min-width: calc(50% - .5rem);
-    font-size: .9rem;
+    width: 100%;
+    font-size: 1rem;
     font-weight: 600;
     border: 0;
-    border-radius: 8px;
-    padding: .9rem .5rem;
+    border-radius: 10px;
+    padding: 1rem .75rem;
     color: #fff;
     text-align: center;
   }
 
-  .verde { background: #064d06; }
-  .verde.active { background: #00b800; color:#000; }
+  .greenState {
+    background: #00b800;
+    color: #000;
+  }
 
-  .rojo { background: #4d0606; }
-  .rojo.active { background: #d60000; }
+  .redState {
+    background: #b80000;
+    color: #fff;
+  }
 
   .footer-note {
     font-size: .7rem;
@@ -171,23 +175,87 @@
     text-align: center;
     margin-top: .5rem;
   }
+
+  /* Popup modal */
+  #modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 9999;
+  }
+
+  #modalCard {
+    background: #1e1e1e;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 320px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    padding: 1rem 1rem 0.75rem;
+    color: #fff;
+    text-align: left;
+  }
+
+  #modalTitle {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: .75rem;
+    color: #fff;
+  }
+
+  .modalRowLabel {
+    font-size: .8rem;
+    color: #aaa;
+  }
+
+  .modalRowValue {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: .5rem;
+  }
+
+  .modalStatusGreen {
+    color: #00ff80;
+    font-weight: 600;
+  }
+  .modalStatusRed {
+    color: #ff4d4d;
+    font-weight: 600;
+  }
+
+  #modalCloseBtn {
+    width: 100%;
+    background: #0070f3;
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: .9rem .75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    margin-top: .75rem;
+    margin-bottom: .5rem;
+  }
 </style>
 </head>
 <body>
 
 <h1>
-  Carnestoltes BARCODE
+  Carnestoltes CONTROL
   <span class="badge">ONLINE</span>
 </h1>
 
-<!-- Bloc càmera -->
+<!-- Càmera -->
 <div class="card">
   <button id="scanBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
   <canvas id="framegrab"></canvas>
 </div>
 
-<!-- Bloc info persona -->
+<!-- Info persona (persistent sota càmera) -->
 <div class="card" id="infoCard">
   <div class="row">
     <div class="label">Nom</div>
@@ -201,45 +269,59 @@
 
   <div id="alertContainer"></div>
 
-  <div class="section-title">Pagament</div>
-  <div class="btn-row">
-    <button class="state-btn verde" id="btnPagat">Pagat</button>
-    <button class="state-btn rojo" id="btnNoPagat">No pagat</button>
-  </div>
+  <div class="section-title">Accions ràpides</div>
 
-  <div class="section-title">Objectes</div>
-  <div class="btn-row">
-    <button class="state-btn verde" id="btnObjectesSI">Objectes entregats</button>
-    <button class="state-btn rojo" id="btnObjectesNO">Objectes NO entregats</button>
+  <div class="btn-col">
+    <button class="state-btn" id="btnTogglePagat">...</button>
+    <button class="state-btn" id="btnToggleObjectes">...</button>
   </div>
 
   <div class="footer-note" id="dataPagamentNote"></div>
 </div>
 
-<!-- Bloc debug -->
+<!-- Debug -->
 <div class="card">
   <div id="debugLog">📹 Llista d'esdeveniments…</div>
 </div>
 
+<!-- Popup modal resum -->
+<div id="modalOverlay">
+  <div id="modalCard">
+    <div id="modalTitle">Detalls participant</div>
+
+    <div class="modalRow">
+      <div class="modalRowLabel">Nom</div>
+      <div class="modalRowValue" id="modalNom">-</div>
+    </div>
+
+    <div class="modalRow">
+      <div class="modalRowLabel">Pagament</div>
+      <div class="modalRowValue" id="modalPagament">-</div>
+    </div>
+
+    <div class="modalRow">
+      <div class="modalRowLabel">Objectes</div>
+      <div class="modalRowValue" id="modalObjectes">-</div>
+    </div>
+
+    <button id="modalCloseBtn">OK</button>
+  </div>
+</div>
+
 <script>
-/* =========================
-   CONFIG
-   ========================= */
+/* =============== CONFIG =============== */
 const API_BASE = "https://script.google.com/macros/s/AKfycbw_D0Gf5yja1d8hgIULvsdS8tKjGyt2W1P_8G6qzPttiNIsd3UpCADV89yONey3H1Z4uw/exec";
 
-/* =========================
-   ESTAT
-   ========================= */
+/* =============== STATE =============== */
 let scanning = false;
 let streamRef = null;
-let detector = null; // BarcodeDetector nadiu
+let detector = null;
+
 let lastShownQR = null;
 let currentQR = null;
 let currentData = null;
 
-/* =========================
-   DOM
-   ========================= */
+/* =============== DOM =============== */
 const scanBtn = document.getElementById('scanBtn');
 const preview = document.getElementById('preview');
 const canvas  = document.getElementById('framegrab');
@@ -251,14 +333,16 @@ const qrValue  = document.getElementById('qrValue');
 const alertContainer = document.getElementById('alertContainer');
 const dataPagamentNote = document.getElementById('dataPagamentNote');
 
-const btnPagat = document.getElementById('btnPagat');
-const btnNoPagat = document.getElementById('btnNoPagat');
-const btnObjectesSI = document.getElementById('btnObjectesSI');
-const btnObjectesNO = document.getElementById('btnObjectesNO');
+const btnTogglePagat = document.getElementById('btnTogglePagat');
+const btnToggleObjectes = document.getElementById('btnToggleObjectes');
 
-/* =========================
-   HELPERS UI
-   ========================= */
+const modalOverlay = document.getElementById('modalOverlay');
+const modalCloseBtn = document.getElementById('modalCloseBtn');
+const modalNom = document.getElementById('modalNom');
+const modalPagament = document.getElementById('modalPagament');
+const modalObjectes = document.getElementById('modalObjectes');
+
+/* =============== UI HELPERS =============== */
 function log(msg){
   console.log(msg);
   debugLog.textContent += "\n" + msg;
@@ -269,24 +353,26 @@ function showInfoCard() {
   infoCard.style.display = "block";
 }
 
-function renderButtonStates() {
-  if (currentData && currentData.pagat === true) {
-    btnPagat.classList.add('active');
-    btnNoPagat.classList.remove('active');
-  } else {
-    btnPagat.classList.remove('active');
-    btnNoPagat.classList.add('active');
-  }
-
-  if (currentData && currentData.objectesEntregats === true) {
-    btnObjectesSI.classList.add('active');
-    btnObjectesNO.classList.remove('active');
-  } else {
-    btnObjectesSI.classList.remove('active');
-    btnObjectesNO.classList.add('active');
-  }
+function statusLabelGreen(text) {
+  return `<span class="modalStatusGreen">${text}</span>`;
+}
+function statusLabelRed(text) {
+  return `<span class="modalStatusRed">${text}</span>`;
 }
 
+function openModal() {
+  modalOverlay.style.display = "flex";
+}
+function closeModal() {
+  modalOverlay.style.display = "none";
+}
+
+modalCloseBtn.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (ev)=>{
+  if (ev.target === modalOverlay) closeModal();
+});
+
+/* Render avisos tipus còpia etc */
 function renderAlerts() {
   alertContainer.innerHTML = "";
 
@@ -315,21 +401,50 @@ function renderAlerts() {
   }
 }
 
-function renderInfo() {
-  if (!currentData) return;
+/* Actualitza els botons toggle segons l'estat actual */
+function renderToggleButtons() {
+  if (!currentData) {
+    btnTogglePagat.textContent = "Pagament ?";
+    btnTogglePagat.className = "state-btn redState";
+
+    btnToggleObjectes.textContent = "Objectes ?";
+    btnToggleObjectes.className = "state-btn redState";
+    return;
+  }
+
+  // PAGAT
+  if (currentData.pagat === true) {
+    btnTogglePagat.textContent = "PAGAT ✅";
+    btnTogglePagat.className = "state-btn greenState";
+  } else {
+    btnTogglePagat.textContent = "NO PAGAT ❌";
+    btnTogglePagat.className = "state-btn redState";
+  }
+
+  // OBJECTES
+  if (currentData.objectesEntregats === true) {
+    btnToggleObjectes.textContent = "OBJECTES DONATS 🎁";
+    btnToggleObjectes.className = "state-btn greenState";
+  } else {
+    btnToggleObjectes.textContent = "OBJECTES PENDENTS 📦";
+    btnToggleObjectes.className = "state-btn redState";
+  }
+}
+
+/* Render targeta sota càmera */
+function renderInfoCard() {
   showInfoCard();
 
-  if (currentData.found === false) {
-    nomValue.textContent = "-";
-    qrValue.textContent  = currentQR || "(sense)";
+  qrValue.textContent = currentQR || "(sense)";
+  if (!currentData || currentData.found === false) {
+    nomValue.textContent = currentData && currentData.found === false ? "-" : "(sense dades)";
     dataPagamentNote.textContent = "";
     renderAlerts();
-    renderButtonStates();
+    renderToggleButtons();
     return;
   }
 
   nomValue.textContent = currentData.nom || "(sense nom)";
-  qrValue.textContent  = currentQR || "(sense)";
 
   if (currentData.pagat && currentData.dataPagament) {
     dataPagamentNote.textContent = "Pagat el " + currentData.dataPagament;
@@ -338,57 +453,90 @@ function renderInfo() {
   }
 
   renderAlerts();
-  renderButtonStates();
+  renderToggleButtons();
 }
 
-/* =========================
-   API CALLS Google Sheets
-   ========================= */
+/* Render popup modal */
+function renderModal() {
+  if (!currentData) {
+    modalNom.textContent = "(sense dades)";
+    modalPagament.innerHTML = statusLabelRed("?");
+    modalObjectes.innerHTML = statusLabelRed("?");
+    openModal();
+    return;
+  }
+
+  modalNom.textContent = currentData.nom || "(sense nom)";
+
+  if (currentData.pagat === true) {
+    modalPagament.innerHTML = statusLabelGreen("PAGAT ✅");
+  } else {
+    modalPagament.innerHTML = statusLabelRed("NO PAGAT ❌");
+  }
+
+  if (currentData.objectesEntregats === true) {
+    modalObjectes.innerHTML = statusLabelGreen("OBJECTES DONATS 🎁");
+  } else {
+    modalObjectes.innerHTML = statusLabelRed("OBJECTES PENDENTS 📦");
+  }
+
+  openModal();
+}
+
+/* =============== API HELPERS =============== */
+async function safeFetchJSON(url) {
+  log("→ " + url);
+  const res = await fetch(url);
+  log("← STATUS " + res.status);
+  const text = await res.text();
+  log("← BODY " + text.slice(0,120) + (text.length>120?"...":""));
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    return null;
+  }
+}
+
 async function apiLookup(qr) {
   const url = API_BASE + "?action=lookup&qr=" + encodeURIComponent(qr);
-  const res = await fetch(url);
-  return res.json();
+  return await safeFetchJSON(url);
 }
 
 async function apiSetPagat(qr, value) {
   const url = API_BASE + "?action=setPagat&qr=" + encodeURIComponent(qr) +
               "&value=" + encodeURIComponent(value);
-  const res = await fetch(url);
-  return res.json();
+  return await safeFetchJSON(url);
 }
 
 async function apiSetObjectes(qr, value) {
   const url = API_BASE + "?action=setObjectes&qr=" + encodeURIComponent(qr) +
               "&value=" + encodeURIComponent(value);
-  const res = await fetch(url);
-  return res.json();
+  return await safeFetchJSON(url);
 }
 
-/* =========================
-   Quan trobem un QR
-   ========================= */
+/* =============== LÒGICA DE LECTURA QR =============== */
 async function onQRDetected(qrText) {
-  if (qrText === lastShownQR) return; // evita spamejar
-  lastShownQR = qrText;
+  if (qrText === lastShownQR) {
+    // si escanegues el mateix QR repetit, igualment volem refrescar i treure popup
+    // pero no spamejem logs
+  } else {
+    log("QR detectat: " + qrText);
+  }
 
-  log("QR detectat: " + qrText);
+  lastShownQR = qrText;
   currentQR = qrText;
 
-  try {
-    currentData = await apiLookup(qrText);
-    renderInfo();
-  } catch (err) {
-    log("Error lookup: " + err);
-  }
+  // demanem dades al backend
+  currentData = await apiLookup(qrText);
+
+  // actualitzem UI fixa i modal
+  renderInfoCard();
+  renderModal();
 }
 
-/* =========================
-   Bucle de lectura amb BarcodeDetector
-   ========================= */
 async function scanLoop() {
   if (!scanning) return;
 
-  // copiar frame actual del <video> al canvas
   const w = preview.videoWidth;
   const h = preview.videoHeight;
 
@@ -400,16 +548,14 @@ async function scanLoop() {
 
     try {
       const barcodes = await detector.detect(canvas);
-      // detector.detect() retorna array de codis trobats
       if (barcodes && barcodes.length > 0) {
-        // agafem el primer
         const raw = barcodes[0].rawValue || barcodes[0].raw || "";
         if (raw) {
           onQRDetected(raw.trim());
         }
       }
     } catch (err) {
-      // si peta detect(), simplement passem
+      // ignorar errors momentanis de detecció
     }
   }
 
@@ -418,12 +564,9 @@ async function scanLoop() {
   }
 }
 
-/* =========================
-   Iniciar / aturar càmera
-   ========================= */
+/* =============== START/STOP CÀMERA =============== */
 async function startStop() {
   if (scanning) {
-    // aturar
     scanning = false;
     scanBtn.classList.remove('active');
     scanBtn.textContent = "ESCANEJAR QR";
@@ -432,7 +575,6 @@ async function startStop() {
       streamRef.getTracks().forEach(t => t.stop());
       streamRef = null;
     }
-
     log("📹 Càmera aturada");
     return;
   }
@@ -444,7 +586,6 @@ async function startStop() {
   log("📹 Obrint càmera...");
 
   try {
-    // IMPORTANT: camera posterior
     streamRef = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" } },
       audio: false
@@ -454,17 +595,18 @@ async function startStop() {
     await preview.play();
     log("📹 Càmera oberta");
 
-    // inicialitzar detector nadiu
     if ('BarcodeDetector' in window) {
-      detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8'] });
+      detector = new BarcodeDetector({
+        formats: ['qr_code','code_128','code_39','ean_13','ean_8']
+      });
       log("BarcodeDetector inicialitzat ✅");
     } else {
       log("❌ Aquest navegador no suporta BarcodeDetector");
-      alert("El teu navegador no suporta lectura QR nativa.");
+      alert("Aquest dispositiu no suporta lectura QR nativa.");
+      scanning = false;
       return;
     }
 
-    // arrencar loop
     requestAnimationFrame(scanLoop);
 
   } catch (err) {
@@ -482,42 +624,34 @@ async function startStop() {
   }
 }
 
-/* =========================
-   Botons d'edició en temps real
-   ========================= */
-btnPagat.addEventListener('click', async () => {
-  if (!currentQR) return;
-  await apiSetPagat(currentQR, "SI");
+/* =============== TOGGLES (PAGAT / OBJECTES) =============== */
+btnTogglePagat.addEventListener('click', async () => {
+  if (!currentQR || !currentData) return;
+
+  // calculem quin valor hem d'enviar
+  const newValue = currentData.pagat === true ? "NO" : "SI";
+
+  await apiSetPagat(currentQR, newValue);
   currentData = await apiLookup(currentQR);
-  renderInfo();
+
+  renderInfoCard();
+  renderModal(); // refresca el popup per feedback visual immediat
 });
 
-btnNoPagat.addEventListener('click', async () => {
-  if (!currentQR) return;
-  await apiSetPagat(currentQR, "NO");
+btnToggleObjectes.addEventListener('click', async () => {
+  if (!currentQR || !currentData) return;
+
+  const newValue = currentData.objectesEntregats === true ? "NO" : "SI";
+
+  await apiSetObjectes(currentQR, newValue);
   currentData = await apiLookup(currentQR);
-  renderInfo();
+
+  renderInfoCard();
+  renderModal(); // refresca el popup
 });
 
-btnObjectesSI.addEventListener('click', async () => {
-  if (!currentQR) return;
-  await apiSetObjectes(currentQR, "SI");
-  currentData = await apiLookup(currentQR);
-  renderInfo();
-});
-
-btnObjectesNO.addEventListener('click', async () => {
-  if (!currentQR) return;
-  await apiSetObjectes(currentQR, "NO");
-  currentData = await apiLookup(currentQR);
-  renderInfo();
-});
-
-/* =========================
-   Botó principal
-   ========================= */
+/* =============== INIT =============== */
 scanBtn.addEventListener('click', startStop);
 </script>
 </body>
 </html>
-
