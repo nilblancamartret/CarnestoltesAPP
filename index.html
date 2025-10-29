@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes FINAL3 ✅</title>
+<title>Carnestoltes FINAL4 ✅</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
@@ -67,8 +67,6 @@
     object-fit: cover;
     display: block;
   }
-
-  canvas { display:none; }
 
   #debugLog {
     font-size: .8rem;
@@ -180,14 +178,13 @@
 <body>
 
 <h1>
-  Carnestoltes FINAL3
+  Carnestoltes FINAL4
   <span class="badge">ONLINE</span>
 </h1>
 
 <div class="card">
   <button id="startBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
-  <canvas id="framegrab"></canvas>
 </div>
 
 <div class="card" id="infoCard">
@@ -222,24 +219,24 @@
   <div id="debugLog">📹 Llista d'esdeveniments…</div>
 </div>
 
-<!-- 1. Intento principal -->
-<script src="https://unpkg.com/@zxing/browser@latest"></script>
-<!-- 2. Backup (algunos navegadores exponen ZXing en otra ruta) -->
-<script src="https://unpkg.com/@zxing/library@latest"></script>
+<!-- ZXing UMD build clásica -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 
 <script>
+  // ===== CONFIG =====
   const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
+  // ===== ESTADO =====
   let scanning = false;
   let streamRef = null;
-  let codeReader = null;
+  let reader = null; // BrowserQRCodeReader
   let currentQR = null;
   let currentData = null;
   let lastShownQR = null;
 
+  // ===== DOM =====
   const startBtn = document.getElementById('startBtn');
   const preview  = document.getElementById('preview');
-  const canvas   = document.getElementById('framegrab');
   const debugLog = document.getElementById('debugLog');
 
   const infoCard = document.getElementById('infoCard');
@@ -342,15 +339,15 @@
   }
 
   async function apiSetPagat(qr, value) {
-    const url = API_BASE + "?action=setPagat&qr=" +
-      encodeURIComponent(qr) + "&value=" + encodeURIComponent(value);
+    const url = API_BASE + "?action=setPagat&qr=" + encodeURIComponent(qr) +
+      "&value=" + encodeURIComponent(value);
     const res = await fetch(url);
     return res.json();
   }
 
   async function apiSetObjectes(qr, value) {
-    const url = API_BASE + "?action=setObjectes&qr=" +
-      encodeURIComponent(qr) + "&value=" + encodeURIComponent(value);
+    const url = API_BASE + "?action=setObjectes&qr=" + encodeURIComponent(qr) +
+      "&value=" + encodeURIComponent(value);
     const res = await fetch(url);
     return res.json();
   }
@@ -370,50 +367,35 @@
     }
   }
 
-  function initCodeReaderIfPossible() {
-    // intenta inicializar lector desde cualquiera de las dos libs
-    try {
-      if (!codeReader) {
-        if (typeof ZXing !== "undefined" && ZXing.BrowserMultiFormatReader) {
-          codeReader = new ZXing.BrowserMultiFormatReader();
-          log("ZXing BrowserMultiFormatReader inicialitzat ✅");
-        }
-      }
-    } catch (e) {
-      log("Error creant codeReader: " + e);
-    }
-  }
-
-  async function scanLoop() {
+  // lector contínuo usando decodeOnceFromVideoElement en bucle
+  async function continuousScanTick() {
     if (!scanning) return;
 
-    // cada frame comprobamos si ZXing ya está cargado
-    initCodeReaderIfPossible();
-
-    if (codeReader) {
-      const w = preview.videoWidth;
-      const h = preview.videoHeight;
-      if (w && h) {
-        const ctx = canvas.getContext('2d');
-        canvas.width = w;
-        canvas.height = h;
-        ctx.drawImage(preview, 0, 0, w, h);
-
-        try {
-          const result = await codeReader.decodeFromCanvas(canvas);
-          if (result && result.getText) {
-            onQRDetected(result.getText());
-          }
-        } catch (err) {
-          // normal si no hay QR visible en este frame
-        }
+    if (!reader) {
+      if (window.ZXing && ZXing.BrowserQRCodeReader) {
+        reader = new ZXing.BrowserQRCodeReader();
+        log("ZXing BrowserQRCodeReader inicialitzat ✅");
+      } else {
+        log("⚠ ZXing encara no disponible…");
+        setTimeout(continuousScanTick, 300);
+        return;
       }
-    } else {
-      log("⚠ ZXing encara no disponible...");
+    }
+
+    try {
+      // decodeOnceFromVideoElement() intenta leer UNA vez y resuelve cuando encuentra algo
+      const result = await reader.decodeOnceFromVideoElement(preview);
+      if (result && result.text) {
+        onQRDetected(result.text);
+      }
+    } catch (err) {
+      // Puede lanzar si no lee nada inmediatamente.
+      // Volvemos a intentar.
     }
 
     if (scanning) {
-      requestAnimationFrame(scanLoop);
+      // pequeño delay para no quemar CPU
+      setTimeout(continuousScanTick, 200);
     }
   }
 
@@ -449,8 +431,8 @@
       await preview.play();
       log("📷 Càmera oberta");
 
-      // arrancar bucle
-      requestAnimationFrame(scanLoop);
+      // empezamos el bucle de lectura continua
+      continuousScanTick();
 
     } catch (err) {
       log("ERROR càmera: " + err.name + " / " + err.message);
@@ -496,7 +478,6 @@
     currentData = await apiLookup(currentQR);
     renderInfo();
   });
-
 </script>
 </body>
 </html>
