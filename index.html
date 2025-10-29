@@ -3,77 +3,57 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Carnestoltes CONTROL 🎭</title>
+<title>Carnestoltes CONTROL 🎭 — Offline + Bulk</title>
 <style>
-body{
-  font-family:system-ui,sans-serif;background:#111;color:#fff;
-  margin:0;padding:1rem;
-}
-h1{text-align:center;font-size:1.2rem;margin-bottom:1rem;}
-.badge{background:#0f0;color:#000;padding:.2rem .4rem;border-radius:.3rem;font-weight:700;}
-.card{
-  background:#1e1e1e;border-radius:10px;padding:1rem;
-  box-shadow:0 0 10px rgba(0,0,0,.6);margin-bottom:1rem;
-}
-button{
-  font-size:1rem;font-weight:600;border:none;border-radius:10px;padding:.8rem 1rem;
-}
-#scanBtn{
-  width:100%;background:#0070f3;color:#fff;
-}
-#scanBtn.active{background:#00b800;color:#000;}
-video{
-  width:100%;border-radius:10px;background:#000;min-height:220px;
-}
-#debugLog{
-  font-size:.75rem;color:#0f0;font-family:monospace;white-space:pre-line;
-}
+body{font-family:system-ui,sans-serif;background:#111;color:#fff;margin:0;padding:1rem}
+h1{text-align:center;font-size:1.1rem;margin:0 0 .75rem}
+.badge{background:#0f0;color:#000;padding:.15rem .4rem;border-radius:.4rem;font-weight:700}
+.toolbar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem}
+.toolbar button{flex:1 1 auto;min-width:11rem}
+.card{background:#1e1e1e;border-radius:10px;padding:1rem;box-shadow:0 0 10px rgba(0,0,0,.6);margin-bottom:1rem}
+button{font-size:1rem;font-weight:600;border:none;border-radius:10px;padding:.7rem 1rem}
+#scanBtn{background:#0070f3;color:#fff}
+#scanBtn.active{background:#00b800;color:#000}
+.secondary{background:#333;color:#fff}
+.accent{background:#00a3a3;color:#000}
+video{width:100%;border-radius:10px;background:#000;min-height:220px}
+#debugLog{font-size:.75rem;color:#0f0;font-family:monospace;white-space:pre-line}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;margin:.25rem 0 .5rem}
+.chip{font-size:.75rem;padding:.15rem .5rem;border-radius:.7rem;background:#222;border:1px solid #444;color:#ddd}
 
 /* Spinner global */
-#spinnerOverlay{
-  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.6);z-index:200;
-}
-.spinner{
-  border:6px solid #333;border-top:6px solid #00ff99;border-radius:50%;
-  width:60px;height:60px;animation:spin 1s linear infinite;
-}
-@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+#spinnerOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:200}
+.spinner{border:6px solid #333;border-top:6px solid #00ff99;border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
-/* Popup persona / error */
-#modalOverlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.8);
-  display:none;align-items:center;justify-content:center;z-index:150;
-}
-#modalCard{
-  background:#1e1e1e;border-radius:12px;padding:1rem;
-  max-width:320px;width:100%;text-align:left;
-  box-shadow:0 0 40px rgba(0,0,0,.8);
-}
-#modalTitle{
-  font-size:1.1rem;margin-bottom:.5rem;font-weight:600;
-}
-.modalRowLabel{color:#ccc;font-size:.85rem;}
-.modalRowValue{font-weight:600;margin-bottom:.5rem;}
-.modalSmallNote{color:#aaa;font-size:.8rem;margin-top:.25rem;}
-.state-btn{
-  width:100%;margin-top:.5rem;padding:1rem;border-radius:10px;font-weight:600;
-}
-.redState{background:#b80000;color:#fff;}
-.greenState{background:#00b800;color:#000;}
-#modalCloseBtn{
-  margin-top:.75rem;background:#0070f3;color:#fff;width:100%;
-}
-.errorModal{
-  border:2px solid #ff4d4d;background:#400;text-align:center;
-}
+/* Modal */
+#modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:150}
+#modalCard{background:#1e1e1e;border-radius:12px;padding:1rem;max-width:340px;width:100%;text-align:left;box-shadow:0 0 40px rgba(0,0,0,.8)}
+#modalTitle{font-size:1.1rem;margin-bottom:.4rem;font-weight:700}
+.modalRowLabel{color:#ccc;font-size:.85rem}
+.modalRowValue{font-weight:700;margin-bottom:.5rem}
+.modalSmallNote{color:#aaa;font-size:.8rem;margin-top:.25rem}
+.state-btn{width:100%;margin-top:.5rem;padding:1rem;border-radius:10px;font-weight:700}
+.redState{background:#b80000;color:#fff}
+.greenState{background:#00b800;color:#000}
+#modalCloseBtn{margin-top:.75rem;background:#0070f3;color:#fff;width:100%}
+.errorModal{border:2px solid #ff4d4d;background:#400;text-align:center}
 </style>
 </head>
 <body>
 
-<h1>Carnestoltes CONTROL <span class="badge">ONLINE</span></h1>
+<h1>Carnestoltes CONTROL <span class="badge">OFFLINE + BULK</span></h1>
+
+<div class="toolbar">
+  <button id="downloadBtn" class="secondary">⬇️ Descarregar BBDD</button>
+  <button id="sendBtn" class="accent">⬆️ Enviar canvis (0)</button>
+</div>
 
 <div class="card">
+  <div class="chips">
+    <div class="chip" id="dbInfo">BBDD local: (sense)</div>
+    <div class="chip" id="dirtyInfo">QRs tocats: 0</div>
+  </div>
   <button id="scanBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
 </div>
@@ -82,7 +62,7 @@ video{
   <div id="debugLog">📹 Preparat…</div>
 </div>
 
-<!-- Spinner global (escaneig & al guardar canvis) -->
+<!-- Spinner global -->
 <div id="spinnerOverlay"><div class="spinner"></div></div>
 
 <!-- Popup info / accions -->
@@ -106,21 +86,27 @@ video{
 </div>
 
 <script>
-// === CONFIG ===
-const API_BASE="https://script.google.com/macros/s/AKfycbw_D0Gf5yja1d8hgIULvsdS8tKjGyt2W1P_8G6qzPttiNIsd3UpCADV89yONey3H1Z4uw/exec";
+/* ===== CONFIG ===== */
+const API_BASE = "https://script.google.com/macros/s/AKfycbw_D0Gf5yja1d8hgIULvsdS8tKjGyt2W1P_8G6qzPttiNIsd3UpCADV89yONey3H1Z4uw/exec";
+const LOCAL_BASE_KEY = "carnestoltes_base_v1"; // foto inicial (BASE)
+const LOCAL_WORK_KEY = "carnestoltes_work_v1"; // còpia de treball (WORK)
+const LOCAL_DIRTY_KEY = "carnestoltes_dirty_v1"; // camps tocats per QR
 
-// === STATE ===
-let scanning=false;          // càmera encesa?
-let locked=false;            // estem atenent un QR ara mateix?
-let streamRef=null;
-let detector=null;
+/* ===== STATE ===== */
+let scanning=false, locked=false, streamRef=null, detector=null;
+let currentQR=null, currentData=null;
+let localPagat=null, localObjectes=null;
 
-let currentQR=null;          // codi QR actual
-let currentData=null;        // dades originals de la sheet
-let localPagat=null;         // estat local "pagat?" (editable abans de guardar)
-let localObjectes=null;      // estat local "objectes donats?" (editable abans de guardar)
+let baseDB=null;   // { fetchedAt, rows: { [qr]: {...} } }
+let workDB=null;   // { fetchedAt, rows: { [qr]: {...} } }
+let dirty={};      // { [qr]: { pagat?:true, objectesEntregats?:true } }
 
-// === DOM ===
+/* ===== DOM ===== */
+const downloadBtn=document.getElementById('downloadBtn');
+const sendBtn=document.getElementById('sendBtn');
+const dbInfo=document.getElementById('dbInfo');
+const dirtyInfo=document.getElementById('dirtyInfo');
+
 const scanBtn=document.getElementById('scanBtn');
 const preview=document.getElementById('preview');
 const debugLog=document.getElementById('debugLog');
@@ -135,275 +121,276 @@ const modalToggleObjectes=document.getElementById('modalToggleObjectes');
 const modalExtraInfo=document.getElementById('modalExtraInfo');
 const modalCloseBtn=document.getElementById('modalCloseBtn');
 
-// === UI HELPERS ===
-function log(m){
-  console.log(m);
-  debugLog.textContent+="\n"+m;
-  debugLog.scrollTop=debugLog.scrollHeight;
+/* ===== HELPERS ===== */
+function log(m){ console.log(m); debugLog.textContent+="\n"+m; debugLog.scrollTop=debugLog.scrollHeight; }
+function showSpinner(b){ spinner.style.display = b ? "flex" : "none"; }
+function openModal(){ modalOverlay.style.display="flex"; }
+function closeModal(){ modalOverlay.style.display="none"; modalCard.classList.remove('errorModal'); }
+function vibrateOk(){ if(navigator.vibrate) navigator.vibrate(30); }
+function vibrateError(){ if(navigator.vibrate) navigator.vibrate([0,120,60,120]); }
+function fmtDate(d){ try{ return new Date(d).toLocaleString(); }catch{ return String(d||""); } }
+
+function loadStores(){
+  try{ baseDB = JSON.parse(localStorage.getItem(LOCAL_BASE_KEY)||"null"); }catch{ baseDB=null; }
+  try{ workDB = JSON.parse(localStorage.getItem(LOCAL_WORK_KEY)||"null"); }catch{ workDB=null; }
+  try{ dirty  = JSON.parse(localStorage.getItem(LOCAL_DIRTY_KEY)||"{}"); }catch{ dirty={}; }
+  updateBadges();
+}
+function saveBase(){ localStorage.setItem(LOCAL_BASE_KEY, JSON.stringify(baseDB)); updateBadges(); }
+function saveWork(){ localStorage.setItem(LOCAL_WORK_KEY, JSON.stringify(workDB)); updateBadges(); }
+function saveDirty(){ localStorage.setItem(LOCAL_DIRTY_KEY, JSON.stringify(dirty)); updateBadges(); }
+function updateBadges(){
+  dbInfo.textContent = baseDB?.fetchedAt ? ("BBDD local: "+fmtDate(baseDB.fetchedAt)) : "BBDD local: (sense)";
+  const nQR = Object.keys(dirty).length;
+  dirtyInfo.textContent = "QRs tocats: "+nQR;
+  sendBtn.textContent = "⬆️ Enviar canvis ("+nQR+")";
 }
 
-function showSpinner(show){
-  spinner.style.display=show?"flex":"none";
-}
-
-function openModal(){
-  modalOverlay.style.display="flex";
-}
-function closeModal(){
-  modalOverlay.style.display="none";
-  modalCard.classList.remove('errorModal');
-}
-
-// === API HELPERS ===
-async function safeFetchJSON(u){
-  try{
-    const r=await fetch(u);
-    const t=await r.text();
-    return JSON.parse(t);
-  }catch(e){
-    return null;
+/* Aviso al cerrar si hay cambios */
+window.addEventListener('beforeunload', (e)=>{
+  if(Object.keys(dirty).length>0){
+    e.preventDefault();
+    e.returnValue = "";
   }
+});
+
+/* ===== API ===== */
+async function safeFetchJSON(url, opts){
+  try{
+    const res = await fetch(url, opts||{});
+    const txt = await res.text();
+    return JSON.parse(txt);
+  }catch(e){ return null; }
+}
+async function apiDump(){ return await safeFetchJSON(API_BASE+"?action=dump"); }
+async function apiBulk(changes){
+  return await safeFetchJSON(API_BASE+"?action=bulk", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ changes })
+  });
 }
 
-async function apiLookup(qr){
-  return await safeFetchJSON(
-    API_BASE+"?action=lookup&qr="+encodeURIComponent(qr)
-  );
+/* ===== Descarga inicial (BASE/WORK/DIRTY) ===== */
+async function downloadDB_threeWay(){
+  showSpinner(true);
+  const dmp = await apiDump();
+  showSpinner(false);
+  if(!dmp || !dmp.rows){ vibrateError(); alert("No s'ha pogut descarregar la BBDD (dump)."); return; }
+  baseDB = { fetchedAt: new Date().toISOString(), rows: dmp.rows };
+  workDB = JSON.parse(JSON.stringify(baseDB));
+  dirty = {};
+  saveBase(); saveWork(); saveDirty();
+  vibrateOk();
 }
 
-async function apiSetPagat(qr,val){
-  return await safeFetchJSON(
-    API_BASE+"?action=setPagat&qr="+encodeURIComponent(qr)
-      +"&value="+encodeURIComponent(val)
-  );
+/* ===== Marcar edición local (WORK + DIRTY) ===== */
+function setLocalField(qr, field, value){
+  if(!workDB || !workDB.rows || !workDB.rows[qr]) return;
+  // set en WORK
+  workDB.rows[qr][field] = value;
+  // si se marca pagat=true, ponemos fecha local (coherencia visual)
+  if(field==="pagat" && value===true){
+    workDB.rows[qr].dataPagament = new Date().toISOString();
+  }
+  saveWork();
+  // marcar DIRTY
+  if(!dirty[qr]) dirty[qr] = {};
+  dirty[qr][field] = true;
+  saveDirty();
 }
 
-async function apiSetObjectes(qr,val){
-  return await safeFetchJSON(
-    API_BASE+"?action=setObjectes&qr="+encodeURIComponent(qr)
-      +"&value="+encodeURIComponent(val)
-  );
-}
+/* ===== Enviar con MERGE 3-bandas en una llamada (bulk) ===== */
+async function sendChanges_threeWay(){
+  const dirtyQRs = Object.keys(dirty);
+  if(dirtyQRs.length===0){ vibrateOk(); alert("No hi ha canvis per enviar."); return; }
 
-// === CÀMERA ===
-async function startStop(){
-  if(scanning){
-    // apaguem càmera
-    scanning=false;
-    if(streamRef){
-      streamRef.getTracks().forEach(t=>t.stop());
-      streamRef=null;
+  // 1) Obtener REMOTE fresco
+  showSpinner(true);
+  const latest = await apiDump();
+  showSpinner(false);
+  if(!latest || !latest.rows){ vibrateError(); alert("No s'ha pogut obtenir l'estat actual (dump)."); return; }
+
+  // 2) Construir payload mínimo (solo campos tocados y que difieren entre BASE y WORK)
+  const payload = [];
+  for(const qr of dirtyQRs){
+    const baseRow = baseDB?.rows?.[qr] || {};
+    const workRow = workDB?.rows?.[qr] || {};
+    const flags = dirty[qr] || {};
+    const ch = { qr };
+    if(flags.pagat && ( (baseRow.pagat||false) !== (workRow.pagat||false) )){
+      ch.pagat = !!workRow.pagat;
     }
-    scanBtn.classList.remove('active');
-    scanBtn.textContent="ESCANEJAR QR";
+    if(flags.objectesEntregats && ( (baseRow.objectesEntregats||false) !== (workRow.objectesEntregats||false) )){
+      ch.objectesEntregats = !!workRow.objectesEntregats;
+    }
+    if(Object.keys(ch).length>1){ payload.push(ch); }
+  }
+  if(payload.length===0){ vibrateOk(); alert("No hi ha canvis nous respecte la base."); return; }
+
+  // 3) Enviar TODO en 1 llamada
+  showSpinner(true);
+  const resp = await apiBulk(payload);
+  showSpinner(false);
+
+  if(!resp || !resp.ok){
+    vibrateError();
+    alert("No s'han pogut enviar els canvis (bulk). Torna-ho a provar.");
     return;
   }
 
-  // engeguem càmera
+  // 4) Reconstruir BASE/WORK con REMOTE + nuestros cambios (coherencia local)
+  const merged = latest.rows; // estado fresco remoto
+  for(const ch of payload){
+    const r = merged[ch.qr] || (merged[ch.qr] = {});
+    if('pagat' in ch){
+      r.pagat = !!ch.pagat;
+      if(ch.pagat){ r.dataPagament = new Date().toISOString(); }
+    }
+    if('objectesEntregats' in ch){
+      r.objectesEntregats = !!ch.objectesEntregats;
+    }
+  }
+  baseDB = { fetchedAt: new Date().toISOString(), rows: merged };
+  workDB = JSON.parse(JSON.stringify(baseDB));
+  dirty = {};
+  saveBase(); saveWork(); saveDirty();
+  vibrateOk();
+  alert(`✅ Canvis enviats (${resp.updated}/${resp.count})`);
+}
+
+/* ===== Cámara ===== */
+async function startStop(){
+  if(scanning){
+    scanning=false;
+    if(streamRef){ streamRef.getTracks().forEach(t=>t.stop()); streamRef=null; }
+    scanBtn.classList.remove('active'); scanBtn.textContent="ESCANEJAR QR";
+    return;
+  }
   scanning=true;
-  scanBtn.classList.add('active');
-  scanBtn.textContent="CAM ACTIVA (TOCA PER ATURAR)";
-
+  scanBtn.classList.add('active'); scanBtn.textContent="CAM ACTIVA (TOCA PER ATURAR)";
   try{
-    streamRef=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:"environment"},
-      audio:false
-    });
-    preview.srcObject=streamRef;
-    await preview.play();
-
-    if('BarcodeDetector' in window){
+    streamRef=await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" }, audio:false });
+    preview.srcObject=streamRef; await preview.play();
+    if('BarcodeDetector'in window){
       detector=new BarcodeDetector({formats:['qr_code']});
       requestAnimationFrame(scanLoop);
     }else{
       alert("Aquest dispositiu no suporta lector QR.");
       scanning=false;
     }
-
-  }catch(e){
-    alert("Error càmera: "+e.message);
-    scanning=false;
-  }
+  }catch(e){ alert("Error càmera: "+e.message); scanning=false; }
 }
 
 async function scanLoop(){
-  if(!scanning||locked) return;
-
-  const w=preview.videoWidth;
-  const h=preview.videoHeight;
+  if(!scanning || locked) return;
+  const w=preview.videoWidth,h=preview.videoHeight;
   if(w&&h){
-    const c=document.createElement('canvas');
-    c.width=w;c.height=h;
-    const ctx=c.getContext('2d');
-    ctx.drawImage(preview,0,0,w,h);
-
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const ctx=c.getContext('2d'); ctx.drawImage(preview,0,0,w,h);
     try{
       const codes=await detector.detect(c);
       if(codes.length>0){
         const val=codes[0].rawValue;
-        if(val){
-          await handleDetectedQR(val.trim());
-          return;
-        }
+        if(val){ await handleDetectedQR(val.trim()); return; }
       }
-    }catch(e){
-      // ignore detection error frame
-    }
+    }catch{}
   }
-
-  if(scanning && !locked){
-    requestAnimationFrame(scanLoop);
-  }
+  if(scanning && !locked) requestAnimationFrame(scanLoop);
 }
 
-// === LÒGICA QR ===
-function isValidQRFormat(qr){
-  // Ajusta \d{1,4} segons el teu patró real (0001, 0002, etc.)
-  return /^CARNESTOLTES-\d{1,4}$/i.test(qr);
-}
+/* ===== QR Flow ===== */
+function isValidQRFormat(qr){ return /^CARNESTOLTES-\d{1,4}$/i.test(qr); }
 
 async function handleDetectedQR(qr){
-  // bloquegem escaneig per treballar aquesta persona
-  locked=true;
-  scanning=false;
-
-  // tanquem càmera immediatament
-  if(streamRef){
-    streamRef.getTracks().forEach(t=>t.stop());
-    streamRef=null;
-  }
-  scanBtn.classList.remove('active');
-  scanBtn.textContent="ESCANEJAR QR";
-
+  locked=true; scanning=false;
+  if(streamRef){ streamRef.getTracks().forEach(t=>t.stop()); streamRef=null; }
+  scanBtn.classList.remove('active'); scanBtn.textContent="ESCANEJAR QR";
   currentQR=qr;
-  log("QR detectat: "+qr);
 
-  // 1) Validació ràpida local
-  if(!isValidQRFormat(qr)){
-    showErrorModal("QR incorrecte",qr);
-    return;
-  }
+  // vibración OK al leer
+  vibrateOk();
 
-  // 2) Mostrar spinner mentre demanem dades al full
-  showSpinner(true);
-  currentData=await apiLookup(qr);
-  showSpinner(false);
+  // Validación local
+  if(!isValidQRFormat(qr)){ showErrorModal("QR incorrecte", qr); vibrateError(); return; }
 
-  // 3) Si no trobat a la sheet → popup d'error
-  if(!currentData || !currentData.found){
-    showErrorModal("QR no trobat",qr);
-    return;
-  }
+  const row = workDB?.rows?.[qr];
+  if(!row){ showErrorModal("QR no trobat a local", qr); vibrateError(); return; }
 
-  // 4) Carreguem estats locals inicials
-  localPagat=currentData.pagat;
-  localObjectes=currentData.objectesEntregats;
+  // preparar datos
+  currentData = {
+    nom: row.nom || "",
+    pagat: !!row.pagat,
+    objectesEntregats: !!row.objectesEntregats,
+    dataPagament: row.dataPagament || "",
+    ultimScan: new Date().toISOString() // lo actualizamos visualmente
+  };
+  // reflejar últimScan en WORK inmediatamente (no API)
+  workDB.rows[qr].ultimScan = currentData.ultimScan;
+  saveWork();
 
-  // 5) Mostrem modal amb dades i botons toggle
+  localPagat = currentData.pagat;
+  localObjectes = currentData.objectesEntregats;
+
   renderModal();
   openModal();
 }
 
-// === MODAL / RENDER ===
+/* ===== Modal ===== */
 function renderModal(){
-  // modal "normal"
   modalCard.classList.remove('errorModal');
   modalTogglePagat.style.display="block";
   modalToggleObjectes.style.display="block";
 
-  modalNom.textContent=currentData.nom || "(sense nom)";
+  modalNom.textContent = currentData.nom || "(sense nom)";
   updateButtonVisuals();
 
   let extraHTML="";
-  if(currentData.dataPagament){
-    extraHTML+=`<div class="modalSmallNote">Data pagament: ${currentData.dataPagament}</div>`;
-  }
-  if(currentData.ultimScan){
-    extraHTML+=`<div class="modalSmallNote">Últim escaneig: ${currentData.ultimScan}</div>`;
-  }
-  modalExtraInfo.innerHTML=extraHTML;
+  if(currentData.dataPagament){ extraHTML+=`<div class="modalSmallNote">Data pagament: ${fmtDate(currentData.dataPagament)}</div>`; }
+  if(currentData.ultimScan){ extraHTML+=`<div class="modalSmallNote">Últim escaneig: ${fmtDate(currentData.ultimScan)}</div>`; }
+  modalExtraInfo.innerHTML = extraHTML;
 }
-
 function updateButtonVisuals(){
-  // IMPORTANT: canviem només l'estat visual local immediatament.
   modalTogglePagat.textContent = localPagat ? "PAGAT ✅" : "NO PAGAT ❌";
-  modalTogglePagat.className   = "state-btn " + (localPagat ? "greenState" : "redState");
-
+  modalTogglePagat.className = "state-btn "+(localPagat?"greenState":"redState");
   modalToggleObjectes.textContent = localObjectes ? "OBJECTES DONATS 🎁" : "OBJECTES PENDENTS 📦";
-  modalToggleObjectes.className   = "state-btn " + (localObjectes ? "greenState" : "redState");
+  modalToggleObjectes.className = "state-btn "+(localObjectes?"greenState":"redState");
 }
-
-function showErrorModal(title,qrtext){
+function showErrorModal(title, qrtext){
   modalCard.classList.add('errorModal');
-
-  // Mostrem error gran en vermell
-  modalNom.textContent=title;
-
-  // Ocultem els botons de toggle perquè no hi ha res a editar
+  modalNom.textContent = title;
   modalTogglePagat.style.display="none";
   modalToggleObjectes.style.display="none";
-
-  modalExtraInfo.innerHTML=
-    `<div class="modalRowValue" style="color:#ff4d4d;text-align:center;margin-top:.5rem;">
-      ${qrtext}
-     </div>`;
-
+  modalExtraInfo.innerHTML = `<div class="modalRowValue" style="color:#ff4d4d;text-align:center;margin-top:.5rem;">${qrtext}</div>`;
   openModal();
 }
 
-// Quan toques els botons dins del popup, només canvies estat local
-modalTogglePagat.addEventListener('click',()=>{
-  localPagat=!localPagat;
+/* Toggles locales (actualiza WORK + DIRTY al instante) */
+modalTogglePagat.addEventListener('click', ()=>{
+  localPagat = !localPagat;
   updateButtonVisuals();
+  if(currentQR) setLocalField(currentQR, "pagat", localPagat);
+});
+modalToggleObjectes.addEventListener('click', ()=>{
+  localObjectes = !localObjectes;
+  updateButtonVisuals();
+  if(currentQR) setLocalField(currentQR, "objectesEntregats", localObjectes);
 });
 
-modalToggleObjectes.addEventListener('click',()=>{
-  localObjectes=!localObjectes;
-  updateButtonVisuals();
-});
-
-// Quan toques OK / ENRERE:
-// - posem spinner
-// - fem les crides a la API NOMÉS si ha canviat res
-// - tanquem modal
-// - traiem spinner
-// - reobrim càmera automàticament
-modalCloseBtn.addEventListener('click',async()=>{
-  // si és un modal d'error no intentem guardar ni res
-  const isError = modalCard.classList.contains('errorModal');
-
-  if(!isError && currentData && currentQR){
-    const needPagat    = (localPagat     !== currentData.pagat);
-    const needObjectes = (localObjectes  !== currentData.objectesEntregats);
-
-    if(needPagat || needObjectes){
-      showSpinner(true); // spinner mentre guardem canvis
-
-      const calls=[];
-      if(needPagat){
-        calls.push(apiSetPagat(currentQR, localPagat ? "SI" : "NO"));
-      }
-      if(needObjectes){
-        calls.push(apiSetObjectes(currentQR, localObjectes ? "SI" : "NO"));
-      }
-      await Promise.all(calls);
-
-      showSpinner(false);
-    }
-  }
-
-  // tanquem modal
+/* Cerrar popup -> NO envía nada, solo vuelve a escanear */
+modalCloseBtn.addEventListener('click', ()=>{
   closeModal();
-
-  // desbloquegem per poder tornar a escanejar algú nou
   locked=false;
-
-  // tornem a engegar la càmera automàticament per següent persona
-  startStop(); // startStop() quan scanning=false => encén càmera
+  startStop(); // reactivar cámara
 });
 
-// === EVENT PRINCIPAL ESCANER ===
-scanBtn.addEventListener('click',startStop);
+/* Botones top */
+downloadBtn.addEventListener('click', downloadDB_threeWay);
+sendBtn.addEventListener('click', sendChanges_threeWay);
+scanBtn.addEventListener('click', startStop);
+
+/* Init */
+loadStores();
 </script>
 </body>
 </html>
