@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes PROD ✅</title>
+<title>Carnestoltes FINAL ✅</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
@@ -20,8 +20,8 @@
     text-align: center;
     display: flex;
     justify-content: center;
-    gap: .5rem;
     flex-wrap: wrap;
+    gap: .5rem;
     margin: 0 0 1rem;
   }
 
@@ -35,9 +35,7 @@
     line-height: 1.2;
   }
 
-  .scan-card,
-  .panel-card,
-  .log-card {
+  .card {
     background: #1e1e1e;
     border-radius: 12px;
     padding: 1rem;
@@ -45,7 +43,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
   }
 
-  #scanBtn {
+  #startBtn {
     width: 100%;
     font-size: 1.1rem;
     font-weight: 600;
@@ -57,7 +55,7 @@
     margin-bottom: 1rem;
   }
 
-  #scanBtn.scanning {
+  #startBtn.scanning {
     background: #00b800;
     color: #000;
   }
@@ -68,6 +66,7 @@
     background: #000;
     min-height: 220px;
     object-fit: cover;
+    display: block;
   }
 
   canvas { display:none; }
@@ -81,7 +80,11 @@
     min-height: 2.5em;
   }
 
-  /* panel de última persona escaneada */
+  /* Panel de última lectura */
+  #infoCard {
+    display:none;
+  }
+
   .row {
     display: flex;
     justify-content: space-between;
@@ -162,7 +165,6 @@
   .verde {
     background: #064d06;
   }
-
   .verde.active {
     background: #00b800;
     color: #000;
@@ -171,7 +173,6 @@
   .rojo {
     background: #4d0606;
   }
-
   .rojo.active {
     background: #d60000;
   }
@@ -182,25 +183,24 @@
     text-align: center;
     margin-top: .5rem;
   }
-
-  #infoCard { display:none; }
-
 </style>
 </head>
 <body>
 
 <h1>
-  Carnestoltes PROD
+  Carnestoltes FINAL
   <span class="badge">ONLINE</span>
 </h1>
 
-<div class="scan-card">
-  <button id="scanBtn">ESCANEJAR QR</button>
+<!-- Sección cámara / escaneo -->
+<div class="card">
+  <button id="startBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
   <canvas id="framegrab"></canvas>
 </div>
 
-<div class="panel-card" id="infoCard">
+<!-- Panel info última persona -->
+<div class="card" id="infoCard">
   <div class="row">
     <div class="label">Nom</div>
     <div class="value" id="nomValue">-</div>
@@ -228,40 +228,34 @@
   <div class="footer-note" id="dataPagamentNote"></div>
 </div>
 
-<div class="panel-card">
+<!-- Log debug -->
+<div class="card">
   <div id="debugLog">📹 Llista d'esdeveniments…</div>
 </div>
 
-<!-- librería ZXing -->
+<!-- ZXing -->
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
-
 <script>
-  // ==================
-  // CONFIG
-  // ==================
+  // ===== CONFIG =====
   const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
-  // ==================
-  // ESTADO
-  // ==================
+  // ===== ESTADO =====
   let scanning = false;
   let streamRef = null;
+  let codeReader = null; // la crearemos cuando empiece el escaneo
   let currentQR = null;
   let currentData = null;
+  let lastShownQR = null; // para no repintar el mismo QR 20 veces seguidas
 
-  const codeReader = new ZXing.BrowserMultiFormatReader();
-
-  // ==================
-  // DOM
-  // ==================
-  const scanBtn = document.getElementById('scanBtn');
-  const preview = document.getElementById('preview');
-  const canvas  = document.getElementById('framegrab');
+  // ===== DOM =====
+  const startBtn = document.getElementById('startBtn');
+  const preview  = document.getElementById('preview');
+  const canvas   = document.getElementById('framegrab');
   const debugLog = document.getElementById('debugLog');
 
   const infoCard = document.getElementById('infoCard');
   const nomValue = document.getElementById('nomValue');
-  const qrValue = document.getElementById('qrValue');
+  const qrValue  = document.getElementById('qrValue');
   const alertContainer = document.getElementById('alertContainer');
   const dataPagamentNote = document.getElementById('dataPagamentNote');
 
@@ -270,9 +264,7 @@
   const btnObjectesSI = document.getElementById('btnObjectesSI');
   const btnObjectesNO = document.getElementById('btnObjectesNO');
 
-  // ==================
-  // HELPERS UI
-  // ==================
+  // ===== HELPERS UI =====
   function log(msg){
     console.log(msg);
     debugLog.textContent += "\n" + msg;
@@ -284,22 +276,20 @@
   }
 
   function renderButtonStates() {
-    // Pagat
     if (currentData && currentData.pagat === true) {
-        btnPagat.classList.add('active');
-        btnNoPagat.classList.remove('active');
+      btnPagat.classList.add('active');
+      btnNoPagat.classList.remove('active');
     } else {
-        btnPagat.classList.remove('active');
-        btnNoPagat.classList.add('active');
+      btnPagat.classList.remove('active');
+      btnNoPagat.classList.add('active');
     }
 
-    // Objectes
     if (currentData && currentData.objectesEntregats === true) {
-        btnObjectesSI.classList.add('active');
-        btnObjectesNO.classList.remove('active');
+      btnObjectesSI.classList.add('active');
+      btnObjectesNO.classList.remove('active');
     } else {
-        btnObjectesSI.classList.remove('active');
-        btnObjectesNO.classList.add('active');
+      btnObjectesSI.classList.remove('active');
+      btnObjectesNO.classList.add('active');
     }
   }
 
@@ -333,12 +323,11 @@
 
   function renderInfo() {
     if (!currentData) return;
-
     showInfoCard();
 
     if (currentData.found === false) {
       nomValue.textContent = "-";
-      qrValue.textContent = currentQR || "(sense)";
+      qrValue.textContent  = currentQR || "(sense)";
       dataPagamentNote.textContent = "";
       renderAlerts();
       renderButtonStates();
@@ -358,9 +347,7 @@
     renderButtonStates();
   }
 
-  // ==================
-  // API CALLS
-  // ==================
+  // ===== API =====
   async function apiLookup(qr) {
     const url = API_BASE + "?action=lookup&qr=" + encodeURIComponent(qr);
     const res = await fetch(url);
@@ -381,101 +368,107 @@
     return res.json();
   }
 
-  // ==================
-  // ESCANEO Y LOOP
-  // ==================
-  async function handleScannedCode(qrText){
-    log("QR detectat: " + qrText);
+  // ===== ESCANEO =====
+  async function onQRDetected(qrText) {
+    // evita repetir la misma tarjeta mil veces mientras el QR sigue delante
+    if (qrText === lastShownQR) return;
+    lastShownQR = qrText;
 
+    log("QR detectat: " + qrText);
     currentQR = qrText;
+
     try {
       currentData = await apiLookup(qrText);
-      // pinta panel
       renderInfo();
     } catch (err) {
-      log("Error fent lookup: " + err);
+      log("Error lookup: " + err);
     }
   }
 
-  async function frameLoop() {
+  async function scanLoop() {
     if (!scanning) return;
 
     const w = preview.videoWidth;
     const h = preview.videoHeight;
 
     if (w && h) {
-      // copiar frame actual al canvas
+      const ctx = canvas.getContext('2d');
       canvas.width = w;
       canvas.height = h;
-      const ctx = canvas.getContext('2d');
       ctx.drawImage(preview, 0, 0, w, h);
 
-      // intentar leer QR de ese frame
       try {
         const result = await codeReader.decodeFromCanvas(canvas);
         if (result && result.getText) {
-          handleScannedCode(result.getText());
+          onQRDetected(result.getText());
         }
       } catch (err) {
-        // normal si aún no ve un QR claro
+        // normal si no hay QR en este frame
       }
     }
 
     if (scanning) {
-      requestAnimationFrame(frameLoop);
+      requestAnimationFrame(scanLoop);
     }
   }
 
   async function startScanning() {
-    if (scanning) return;
+    if (scanning) {
+      // parar
+      scanning = false;
+      startBtn.classList.remove('scanning');
+      startBtn.textContent = "ESCANEJAR QR";
+      if (streamRef) {
+        streamRef.getTracks().forEach(t => t.stop());
+        streamRef = null;
+      }
+      log("📷 Càmera aturada");
+      return;
+    }
+
+    // iniciar
     scanning = true;
-    scanBtn.classList.add('scanning');
-    scanBtn.textContent = "ESCANEJANT (CAM ACTIVA)";
-    log("📹 Obrint càmera...");
+    startBtn.classList.add('scanning');
+    startBtn.textContent = "CAM ACTIVA (TOCA PER ATURAR)";
+
+    log("📷 Obrint càmera...");
 
     try {
+      // pide cámara
       streamRef = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
       });
+
+      // mostrar cámara en <video>
       preview.srcObject = streamRef;
       await preview.play();
-      log("📹 Càmera oberta");
+      log("📷 Càmera oberta");
 
-      // arrancar loop continuo
-      requestAnimationFrame(frameLoop);
+      // crear lector ZXing si no existe aún
+      if (!codeReader) {
+        codeReader = new ZXing.BrowserMultiFormatReader();
+      }
+
+      // empezar bucle lectura
+      requestAnimationFrame(scanLoop);
 
     } catch (err) {
       log("ERROR càmera: " + err.name + " / " + err.message);
       alert("No puc obrir càmera: " + err.message);
-      stopScanning();
+      // reset estado
+      scanning = false;
+      startBtn.classList.remove('scanning');
+      startBtn.textContent = "ESCANEJAR QR";
+      if (streamRef) {
+        streamRef.getTracks().forEach(t => t.stop());
+        streamRef = null;
+      }
     }
   }
 
-  function stopScanning() {
-    if (!scanning) return;
-    scanning = false;
-    scanBtn.classList.remove('scanning');
-    scanBtn.textContent = "ESCANEJAR QR";
-
-    if (streamRef) {
-      streamRef.getTracks().forEach(t => t.stop());
-      streamRef = null;
-    }
-
-    log("📹 Càmera aturada");
-  }
-
-  // ==================
-  // EVENTOS BOTONES
-  // ==================
-  scanBtn.addEventListener('click', () => {
-    if (scanning) {
-      stopScanning();
-    } else {
-      startScanning();
-    }
-  });
+  // ===== EVENTOS BOTONES =====
+  startBtn.addEventListener('click', startScanning);
 
   btnPagat.addEventListener('click', async () => {
     if (!currentQR) return;
@@ -504,7 +497,6 @@
     currentData = await apiLookup(currentQR);
     renderInfo();
   });
-
 </script>
 </body>
 </html>
