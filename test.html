@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Test càmera</title>
+  <style>
+    body {
+      background:#111;
+      color:#fff;
+      font-family: system-ui, sans-serif;
+      padding:1rem;
+    }
+    button {
+      width:100%;
+      font-size:1.1rem;
+      font-weight:600;
+      padding:1rem;
+      border-radius:10px;
+      border:0;
+      background:#0070f3;
+      color:#fff;
+    }
+    video {
+      width:100%;
+      border-radius:10px;
+      margin-top:1rem;
+      background:#000;
+      min-height:200px;
+      object-fit:cover;
+    }
+    #log {
+      margin-top:1rem;
+      font-size:.8rem;
+      white-space:pre-line;
+      color:#aaa;
+      background:#000;
+      padding:.5rem;
+      border-radius:6px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Test càmera Android</h1>
+
+<button id="openCam">OBRIR CÀMERA</button>
+<video id="vid" playsinline autoplay muted></video>
+<div id="log"></div>
+
+<script>
+const logBox = document.getElementById('log');
+const vid = document.getElementById('vid');
+const btn = document.getElementById('openCam');
+
+function log(msg){
+  console.log(msg);
+  logBox.textContent += msg + "\n";
+}
+
+async function openCamera() {
+  log("Intentant obrir càmera...");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } },
+      audio: false
+    });
+    log("Càmera oberta OK, assignant stream al <video>...");
+    vid.srcObject = stream;
+    await vid.play().catch(e => log("Error play(): " + e));
+    log("Si veus negre, apunta a alguna llum/codi.");
+  } catch (err) {
+    log("ERROR getUserMedia: " + err.name + " / " + err.message);
+    alert("No puc obrir la càmera: " + err.message);
+  }
+}
+
+btn.addEventListener('click', openCamera);
+</script>
+
+</body>
+</html>
