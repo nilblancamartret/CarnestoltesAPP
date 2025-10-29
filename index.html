@@ -1,709 +1,292 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes CONTROL ✅</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Carnestoltes CONTROL 🎭</title>
 <style>
-  body {
-    font-family: system-ui, sans-serif;
-    background-color: #111;
-    color: #fff;
-    margin: 0;
-    padding: 1rem;
-  }
+body {
+  font-family: system-ui, sans-serif;
+  background: #111;
+  color: #fff;
+  margin: 0;
+  padding: 1rem;
+}
+h1 {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+.badge {
+  background: #0f0;
+  color: #000;
+  padding: .2rem .4rem;
+  border-radius: .3rem;
+  font-weight: 700;
+}
+.card {
+  background: #1e1e1e;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 0 10px rgba(0,0,0,.6);
+  margin-bottom: 1rem;
+}
+button {
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  padding: .8rem 1rem;
+}
+#scanBtn {
+  width: 100%;
+  background: #0070f3;
+  color: #fff;
+}
+#scanBtn.active { background: #00b800; color: #000; }
+video {
+  width: 100%;
+  border-radius: 10px;
+  background: #000;
+  min-height: 220px;
+}
+#debugLog {
+  font-size: .75rem;
+  color: #0f0;
+  font-family: monospace;
+  white-space: pre-line;
+}
 
-  h1 {
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #fff;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    gap: .5rem;
-    flex-wrap: wrap;
-    margin: 0 0 1rem;
-  }
-
-  .badge {
-    background: #0a0;
-    color: #000;
-    font-size: .8rem;
-    font-weight: 700;
-    border-radius: .4rem;
-    padding: .1rem .4rem;
-    line-height: 1.2;
-  }
-
-  .card {
-    background: #1e1e1e;
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-  }
-
-  #scanBtn {
-    width: 100%;
-    font-size: 1.1rem;
-    font-weight: 600;
-    padding: 1rem;
-    border-radius: 10px;
-    border: 0;
-    background: #0070f3;
-    color: #fff;
-    margin-bottom: 1rem;
-    text-align:center;
-  }
-  #scanBtn.active {
-    background: #00b800;
-    color: #000;
-  }
-
-  video {
-    width: 100%;
-    border-radius: 10px;
-    background: #000;
-    min-height: 220px;
-    object-fit: cover;
-    display: block;
-  }
-
-  canvas { display:none; }
-
-  #debugLog {
-    font-size: .75rem;
-    line-height: 1.4;
-    color: #0f0;
-    font-family: monospace;
-    white-space: pre-line;
-    min-height: 3em;
-    max-height: 8em;
-    overflow-y: auto;
-  }
-
-  /* Tarjeta info sota la càmera */
-  #infoCard { display:none; }
-
-  .row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: .75rem;
-    flex-wrap: wrap;
-  }
-
-  .label {
-    font-size: .8rem;
-    color: #aaa;
-    flex: 0 0 40%;
-  }
-
-  .value {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #fff;
-    flex: 0 0 60%;
-    text-align: right;
-    word-break: break-word;
-  }
-
-  .qr-code-value {
-    font-size: .8rem;
-    font-weight: 400;
-    color: #888;
-    text-align: right;
-    word-break: break-word;
-  }
-
-  .warning-box {
-    border-radius: 8px;
-    padding: .6rem .75rem;
-    font-size: .9rem;
-    font-weight: 600;
-    margin-bottom: .5rem;
-  }
-  .warning-red {
-    background: #3a0000;
-    color: #ff4d4d;
-    border: 1px solid #ff4d4d;
-  }
-  .warning-yellow {
-    background: #3a3000;
-    color: #ffd84d;
-    border: 1px solid #ffd84d;
-  }
-
-  .section-title {
-    font-size: .9rem;
-    font-weight: 600;
-    color: #ccc;
-    margin: .75rem 0 .5rem;
-  }
-
-  .btn-col {
-    display: flex;
-    flex-direction: column;
-    gap: .75rem;
-    width: 100%;
-  }
-
-  .state-btn {
-    width: 100%;
-    font-size: 1rem;
-    font-weight: 600;
-    border: 0;
-    border-radius: 10px;
-    padding: 1rem .75rem;
-    color: #fff;
-    text-align: center;
-  }
-
-  .greenState {
-    background: #00b800;
-    color: #000;
-  }
-
-  .redState {
-    background: #b80000;
-    color: #fff;
-  }
-
-  .footer-note {
-    font-size: .7rem;
-    color: #999;
-    text-align: center;
-    margin-top: .5rem;
-  }
-
-  /* Popup modal */
-  #modalOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    z-index: 9999;
-  }
-
-  #modalCard {
-    background: #1e1e1e;
-    border-radius: 16px;
-    width: 100%;
-    max-width: 320px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-    padding: 1rem 1rem 0.75rem;
-    color: #fff;
-    text-align: left;
-  }
-
-  #modalTitle {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: .75rem;
-    color: #fff;
-  }
-
-  .modalRowLabel {
-    font-size: .8rem;
-    color: #aaa;
-  }
-
-  .modalRowValue {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: .5rem;
-  }
-
-  .modalStatusGreen {
-    color: #00ff80;
-    font-weight: 600;
-  }
-  .modalStatusRed {
-    color: #ff4d4d;
-    font-weight: 600;
-  }
-
-  .btn-col-modal {
-    display: flex;
-    flex-direction: column;
-    gap: .75rem;
-    width: 100%;
-    margin-top: .5rem;
-  }
-
-  #modalCloseBtn {
-    width: 100%;
-    background: #0070f3;
-    color: #fff;
-    border: 0;
-    border-radius: 10px;
-    padding: .9rem .75rem;
-    font-size: 1rem;
-    font-weight: 600;
-    text-align: center;
-    margin-top: .75rem;
-    margin-bottom: .5rem;
-  }
+/* Popup */
+#modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.8);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+#modalCard {
+  background: #1e1e1e;
+  border-radius: 12px;
+  padding: 1rem;
+  max-width: 320px;
+  width: 100%;
+  text-align: left;
+  box-shadow: 0 0 40px rgba(0,0,0,.8);
+}
+#modalTitle {
+  font-size: 1.1rem;
+  margin-bottom: .5rem;
+  font-weight: 600;
+}
+.modalRowLabel { color: #ccc; font-size: .85rem; }
+.modalRowValue { font-weight: 600; margin-bottom: .5rem; }
+.modalSmallNote {
+  color: #aaa;
+  font-size: .8rem;
+  margin-top: .25rem;
+}
+.state-btn {
+  width: 100%;
+  margin-top: .5rem;
+  padding: 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.redState { background: #b80000; color: #fff; }
+.greenState { background: #00b800; color: #000; }
+#modalCloseBtn {
+  margin-top: .75rem;
+  background: #0070f3;
+  color: #fff;
+  width: 100%;
+}
+.errorModal {
+  border: 2px solid #ff4d4d;
+  background: #400;
+  text-align: center;
+}
 </style>
 </head>
 <body>
 
-<h1>
-  Carnestoltes CONTROL
-  <span class="badge">ONLINE</span>
-</h1>
+<h1>Carnestoltes CONTROL <span class="badge">ONLINE</span></h1>
 
-<!-- Càmera -->
 <div class="card">
   <button id="scanBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
-  <canvas id="framegrab"></canvas>
 </div>
 
-<!-- Info persona (fix sota la càmera) -->
-<div class="card" id="infoCard">
-  <div class="row">
-    <div class="label">Nom</div>
-    <div class="value" id="nomValue">-</div>
-  </div>
-
-  <div class="row">
-    <div class="label">QR</div>
-    <div class="qr-code-value" id="qrValue">(sense)</div>
-  </div>
-
-  <div id="alertContainer"></div>
-
-  <div class="section-title">Accions ràpides</div>
-
-  <div class="btn-col">
-    <button class="state-btn" id="btnTogglePagat">...</button>
-    <button class="state-btn" id="btnToggleObjectes">...</button>
-  </div>
-
-  <div class="footer-note" id="dataPagamentNote"></div>
-</div>
-
-<!-- Debug -->
 <div class="card">
-  <div id="debugLog">📹 Llista d'esdeveniments…</div>
+  <div id="debugLog">📹 Preparat…</div>
 </div>
 
-<!-- Popup modal resum i accions -->
+<!-- Modal -->
 <div id="modalOverlay">
   <div id="modalCard">
-    <div id="modalTitle">Detalls participant</div>
+    <div id="modalTitle">Participant</div>
+    <div class="modalRowLabel">Nom</div>
+    <div class="modalRowValue" id="modalNom">-</div>
 
-    <div class="modalRow">
-      <div class="modalRowLabel">Nom</div>
-      <div class="modalRowValue" id="modalNom">-</div>
-    </div>
+    <div class="modalRowLabel">Pagament</div>
+    <button class="state-btn" id="modalTogglePagat">-</button>
 
-    <div class="modalRow">
-      <div class="modalRowLabel">Pagament</div>
-      <div class="modalRowValue" id="modalPagament">-</div>
-    </div>
+    <div class="modalRowLabel">Objectes</div>
+    <button class="state-btn" id="modalToggleObjectes">-</button>
 
-    <div class="modalRow">
-      <div class="modalRowLabel">Objectes</div>
-      <div class="modalRowValue" id="modalObjectes">-</div>
-    </div>
+    <div id="modalExtraInfo"></div>
 
-    <div class="btn-col-modal">
-      <button class="state-btn" id="modalTogglePagat">...</button>
-      <button class="state-btn" id="modalToggleObjectes">...</button>
-    </div>
-
-    <button id="modalCloseBtn">OK / SEGUENT</button>
+    <button id="modalCloseBtn">OK / ENRERE</button>
   </div>
 </div>
 
 <script>
-/* =============== CONFIG =============== */
-// IMPORTANTE: si vuelves a desplegar Apps Script y cambia la URL, actualiza aquí:
 const API_BASE = "https://script.google.com/macros/s/AKfycbw_D0Gf5yja1d8hgIULvsdS8tKjGyt2W1P_8G6qzPttiNIsd3UpCADV89yONey3H1Z4uw/exec";
 
-/* =============== STATE =============== */
-let scanning = false;     // cámara encendida?
-let locked = false;       // estamos gestionando un QR y no queremos leer más aún?
-let streamRef = null;
-let detector = null;
+// === STATE ===
+let scanning=false, locked=false, streamRef=null, detector=null;
+let currentQR=null, currentData=null;
+let localPagat=null, localObjectes=null;
 
-let lastShownQR = null;
-let currentQR = null;
-let currentData = null;
+// === DOM ===
+const scanBtn=document.getElementById('scanBtn');
+const preview=document.getElementById('preview');
+const debugLog=document.getElementById('debugLog');
+const modalOverlay=document.getElementById('modalOverlay');
+const modalCard=document.getElementById('modalCard');
+const modalNom=document.getElementById('modalNom');
+const modalTogglePagat=document.getElementById('modalTogglePagat');
+const modalToggleObjectes=document.getElementById('modalToggleObjectes');
+const modalCloseBtn=document.getElementById('modalCloseBtn');
+const modalExtraInfo=document.getElementById('modalExtraInfo');
 
-/* =============== DOM =============== */
-const scanBtn = document.getElementById('scanBtn');
-const preview = document.getElementById('preview');
-const canvas  = document.getElementById('framegrab');
-const debugLog = document.getElementById('debugLog');
+// === UTILS ===
+function log(m){ console.log(m); debugLog.textContent+="\n"+m; debugLog.scrollTop=debugLog.scrollHeight; }
+function openModal(){ modalOverlay.style.display="flex"; }
+function closeModal(){ modalOverlay.style.display="none"; modalCard.classList.remove('errorModal'); }
 
-const infoCard = document.getElementById('infoCard');
-const nomValue = document.getElementById('nomValue');
-const qrValue  = document.getElementById('qrValue');
-const alertContainer = document.getElementById('alertContainer');
-const dataPagamentNote = document.getElementById('dataPagamentNote');
-
-const btnTogglePagat = document.getElementById('btnTogglePagat');
-const btnToggleObjectes = document.getElementById('btnToggleObjectes');
-
-const modalOverlay = document.getElementById('modalOverlay');
-const modalCloseBtn = document.getElementById('modalCloseBtn');
-const modalNom = document.getElementById('modalNom');
-const modalPagament = document.getElementById('modalPagament');
-const modalObjectes = document.getElementById('modalObjectes');
-const modalTogglePagat = document.getElementById('modalTogglePagat');
-const modalToggleObjectes = document.getElementById('modalToggleObjectes');
-
-/* =============== UI HELPERS =============== */
-function log(msg){
-  console.log(msg);
-  debugLog.textContent += "\n" + msg;
-  debugLog.scrollTop = debugLog.scrollHeight;
+// === API ===
+async function safeFetchJSON(url){
+  try{ const r=await fetch(url); const t=await r.text(); try{return JSON.parse(t);}catch{return null;} }catch{return null;}
 }
+async function apiLookup(qr){ return await safeFetchJSON(API_BASE+"?action=lookup&qr="+encodeURIComponent(qr)); }
+async function apiSetPagat(qr,val){ return await safeFetchJSON(API_BASE+"?action=setPagat&qr="+encodeURIComponent(qr)+"&value="+encodeURIComponent(val)); }
+async function apiSetObjectes(qr,val){ return await safeFetchJSON(API_BASE+"?action=setObjectes&qr="+encodeURIComponent(qr)+"&value="+encodeURIComponent(val)); }
 
-function showInfoCard() {
-  infoCard.style.display = "block";
-}
-
-function statusLabelGreen(text) {
-  return `<span class="modalStatusGreen">${text}</span>`;
-}
-function statusLabelRed(text) {
-  return `<span class="modalStatusRed">${text}</span>`;
-}
-
-function openModal() {
-  modalOverlay.style.display = "flex";
-}
-function closeModal() {
-  modalOverlay.style.display = "none";
-
-  // desbloquear para siguiente persona
-  locked = false;
-
-  // reanudar escaneo si la cámara sigue encendida
-  if (scanning) {
-    requestAnimationFrame(scanLoop);
-  }
-}
-
-modalCloseBtn.addEventListener('click', closeModal);
-// tocar fuera del cuadro también cierra
-modalOverlay.addEventListener('click', (ev)=>{
-  if (ev.target === modalOverlay) closeModal();
-});
-
-/* avisos tipo "QR inexistent", "possible còpia"... */
-function renderAlerts() {
-  alertContainer.innerHTML = "";
-
-  if (!currentData) return;
-
-  if (currentData.found === false) {
-    const div = document.createElement('div');
-    div.className = "warning-box warning-red";
-    div.textContent = "❌ QR inexistent";
-    alertContainer.appendChild(div);
-    return;
-  }
-
-  if (!currentData.nom || currentData.nom.trim() === "") {
-    const div = document.createElement('div');
-    div.className = "warning-box warning-yellow";
-    div.textContent = "⚠ Sense nom associat";
-    alertContainer.appendChild(div);
-  }
-
-  if (currentData.warningReutilitzat === true) {
-    const div = document.createElement('div');
-    div.className = "warning-box warning-red";
-    div.textContent = "❌ QR reutilitzat fa poc (possible còpia)";
-    alertContainer.appendChild(div);
-  }
-}
-
-/* Actualitza TODOS los botones toggle (tarjeta y modal) según estado actual */
-function renderToggleButtons() {
-  // estado desconocido
-  if (!currentData) {
-    btnTogglePagat.textContent = "Pagament ?";
-    btnTogglePagat.className = "state-btn redState";
-
-    btnToggleObjectes.textContent = "Objectes ?";
-    btnToggleObjectes.className = "state-btn redState";
-
-    modalTogglePagat.textContent = "Pagament ?";
-    modalTogglePagat.className = "state-btn redState";
-
-    modalToggleObjectes.textContent = "Objectes ?";
-    modalToggleObjectes.className = "state-btn redState";
-    return;
-  }
-
-  // PAGAT
-  if (currentData.pagat === true) {
-    btnTogglePagat.textContent = "PAGAT ✅";
-    btnTogglePagat.className = "state-btn greenState";
-
-    modalTogglePagat.textContent = "PAGAT ✅";
-    modalTogglePagat.className = "state-btn greenState";
-  } else {
-    btnTogglePagat.textContent = "NO PAGAT ❌";
-    btnTogglePagat.className = "state-btn redState";
-
-    modalTogglePagat.textContent = "NO PAGAT ❌";
-    modalTogglePagat.className = "state-btn redState";
-  }
-
-  // OBJECTES
-  if (currentData.objectesEntregats === true) {
-    btnToggleObjectes.textContent = "OBJECTES DONATS 🎁";
-    btnToggleObjectes.className = "state-btn greenState";
-
-    modalToggleObjectes.textContent = "OBJECTES DONATS 🎁";
-    modalToggleObjectes.className = "state-btn greenState";
-  } else {
-    btnToggleObjectes.textContent = "OBJECTES PENDENTS 📦";
-    btnToggleObjectes.className = "state-btn redState";
-
-    modalToggleObjectes.textContent = "OBJECTES PENDENTS 📦";
-    modalToggleObjectes.className = "state-btn redState";
-  }
-}
-
-/* Render targeta sota càmera */
-function renderInfoCard() {
-  showInfoCard();
-
-  qrValue.textContent = currentQR || "(sense)";
-  if (!currentData || currentData.found === false) {
-    nomValue.textContent = currentData && currentData.found === false ? "-" : "(sense dades)";
-    dataPagamentNote.textContent = "";
-    renderAlerts();
-    renderToggleButtons();
-    return;
-  }
-
-  nomValue.textContent = currentData.nom || "(sense nom)";
-
-  if (currentData.pagat && currentData.dataPagament) {
-    dataPagamentNote.textContent = "Pagat el " + currentData.dataPagament;
-  } else {
-    dataPagamentNote.textContent = "";
-  }
-
-  renderAlerts();
-  renderToggleButtons();
-}
-
-/* Render popup modal (incluye texto y luego sincroniza botones modal) */
-function renderModal() {
-  if (!currentData) {
-    modalNom.textContent = "(sense dades)";
-    modalPagament.innerHTML = statusLabelRed("?");
-    modalObjectes.innerHTML = statusLabelRed("?");
-    openModal();
-    renderToggleButtons();
-    return;
-  }
-
-  modalNom.textContent = currentData.nom || "(sense nom)";
-
-  if (currentData.pagat === true) {
-    modalPagament.innerHTML = statusLabelGreen("PAGAT ✅");
-  } else {
-    modalPagament.innerHTML = statusLabelRed("NO PAGAT ❌");
-  }
-
-  if (currentData.objectesEntregats === true) {
-    modalObjectes.innerHTML = statusLabelGreen("OBJECTES DONATS 🎁");
-  } else {
-    modalObjectes.innerHTML = statusLabelRed("OBJECTES PENDENTS 📦");
-  }
-
-  openModal();
-  renderToggleButtons(); // asegura que botones modal tengan color/texto correcto
-}
-
-/* =============== API HELPERS =============== */
-async function safeFetchJSON(url) {
-  log("→ " + url);
-  const res = await fetch(url);
-  log("← STATUS " + res.status);
-  const text = await res.text();
-  log("← BODY " + text.slice(0,120) + (text.length>120?"...":""));
-  try {
-    return JSON.parse(text);
-  } catch(e) {
-    return null;
-  }
-}
-
-async function apiLookup(qr) {
-  const url = API_BASE + "?action=lookup&qr=" + encodeURIComponent(qr);
-  return await safeFetchJSON(url);
-}
-
-async function apiSetPagat(qr, value) {
-  const url = API_BASE + "?action=setPagat&qr=" + encodeURIComponent(qr) +
-              "&value=" + encodeURIComponent(value);
-  return await safeFetchJSON(url);
-}
-
-async function apiSetObjectes(qr, value) {
-  const url = API_BASE + "?action=setObjectes&qr=" + encodeURIComponent(qr) +
-              "&value=" + encodeURIComponent(value);
-  return await safeFetchJSON(url);
-}
-
-/* =============== LÒGICA DE GESTIÓ D'UN QR DETECTAT =============== */
-async function handleDetectedQR(qrText) {
-  // bloqueamos escaneo para no disparar más popups hasta que acabemos
-  locked = true;
-
-  lastShownQR = qrText;
-  currentQR = qrText;
-  log("QR detectat: " + qrText);
-
-  // pedimos al backend la info de esa persona
-  currentData = await apiLookup(qrText);
-
-  // pintamos info fija + popup
-  renderInfoCard();
-  renderModal();
-}
-
-/* =============== LOOP D'ESCANEIG =============== */
-async function scanLoop() {
-  // si la càmera no està activa o estem lockejats, sortim
-  if (!scanning || locked) return;
-
-  const w = preview.videoWidth;
-  const h = preview.videoHeight;
-
-  if (w && h) {
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(preview, 0, 0, w, h);
-
-    try {
-      const barcodes = await detector.detect(canvas);
-      if (barcodes && barcodes.length > 0) {
-        const raw = barcodes[0].rawValue || barcodes[0].raw || "";
-        if (raw) {
-          await handleDetectedQR(raw.trim());
-          return; // paramos aquí, no seguimos escaneando hasta desbloquear
-        }
-      }
-    } catch (err) {
-      // ignorar errors puntuals
-    }
-  }
-
-  if (scanning && !locked) {
-    requestAnimationFrame(scanLoop);
-  }
-}
-
-/* =============== START/STOP CÀMERA =============== */
-async function startStop() {
-  if (scanning) {
-    // apagar escaneo y cámara
-    scanning = false;
-    locked = false;
+// === CAMERA ===
+async function startStop(){
+  if(scanning){
+    scanning=false;
+    if(streamRef){streamRef.getTracks().forEach(t=>t.stop()); streamRef=null;}
     scanBtn.classList.remove('active');
-    scanBtn.textContent = "ESCANEJAR QR";
-
-    if (streamRef) {
-      streamRef.getTracks().forEach(t => t.stop());
-      streamRef = null;
-    }
-    log("📹 Càmera aturada");
+    scanBtn.textContent="ESCANEJAR QR";
     return;
   }
-
-  // iniciar
-  scanning = true;
-  locked = false;
+  scanning=true;
   scanBtn.classList.add('active');
-  scanBtn.textContent = "CAM ACTIVA (TOCA PER ATURAR)";
-  log("📹 Obrint càmera...");
-
-  try {
-    streamRef = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false
-    });
-
-    preview.srcObject = streamRef;
+  scanBtn.textContent="CAM ACTIVA (TOCA PER ATURAR)";
+  try{
+    streamRef=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
+    preview.srcObject=streamRef;
     await preview.play();
-    log("📹 Càmera oberta");
+    if('BarcodeDetector'in window){
+      detector=new BarcodeDetector({formats:['qr_code']});
+      requestAnimationFrame(scanLoop);
+    } else alert("Aquest dispositiu no suporta lector QR.");
+  }catch(e){alert("Error càmera: "+e.message); scanning=false;}
+}
 
-    if ('BarcodeDetector' in window) {
-      detector = new BarcodeDetector({
-        formats: ['qr_code','code_128','code_39','ean_13','ean_8']
-      });
-      log("BarcodeDetector inicialitzat ✅");
-    } else {
-      log("❌ Aquest navegador no suporta BarcodeDetector");
-      alert("Aquest dispositiu no suporta lectura QR nativa.");
-      scanning = false;
-      return;
-    }
-
-    requestAnimationFrame(scanLoop);
-
-  } catch (err) {
-    log("ERROR càmera: " + err.name + " / " + err.message);
-    alert("No puc obrir càmera: " + err.message);
-
-    scanning = false;
-    locked = false;
-    scanBtn.classList.remove('active');
-    scanBtn.textContent = "ESCANEJAR QR";
-
-    if (streamRef) {
-      streamRef.getTracks().forEach(t => t.stop());
-      streamRef = null;
-    }
+async function scanLoop(){
+  if(!scanning||locked) return;
+  const w=preview.videoWidth,h=preview.videoHeight;
+  if(w&&h){
+    const c=document.createElement('canvas'); c.width=w;c.height=h;
+    const ctx=c.getContext('2d'); ctx.drawImage(preview,0,0,w,h);
+    try{
+      const codes=await detector.detect(c);
+      if(codes.length>0){
+        const val=codes[0].rawValue;
+        if(val){ await handleDetectedQR(val.trim()); return; }
+      }
+    }catch{}
   }
+  if(scanning&&!locked) requestAnimationFrame(scanLoop);
 }
 
-/* =============== TOGGLES (pagat / objectes) =============== */
-async function togglePagat() {
-  if (!currentQR || !currentData) return;
-  const newValue = currentData.pagat === true ? "NO" : "SI";
-  await apiSetPagat(currentQR, newValue);
-  currentData = await apiLookup(currentQR);
-  renderInfoCard();
+// === HANDLE QR ===
+function isValidQRFormat(qr){
+  return /^CARNESTOLTES-\d{1,4}$/i.test(qr);
+}
+
+async function handleDetectedQR(qr){
+  locked=true; scanning=false;
+  if(streamRef){streamRef.getTracks().forEach(t=>t.stop()); streamRef=null;}
+  scanBtn.classList.remove('active');
+  scanBtn.textContent="ESCANEJAR QR";
+
+  currentQR=qr;
+  log("QR detectat: "+qr);
+
+  // Validació local
+  if(!isValidQRFormat(qr)){
+    showErrorModal("QR incorrecte", qr);
+    return;
+  }
+
+  // Consulta a la API
+  currentData=await apiLookup(qr);
+  if(!currentData||!currentData.found){
+    showErrorModal("QR no trobat", qr);
+    return;
+  }
+
+  // Mostrar info
+  localPagat=currentData.pagat;
+  localObjectes=currentData.objectesEntregats;
   renderModal();
+  openModal();
 }
 
-async function toggleObjectes() {
-  if (!currentQR || !currentData) return;
-  const newValue = currentData.objectesEntregats === true ? "NO" : "SI";
-  await apiSetObjectes(currentQR, newValue);
-  currentData = await apiLookup(currentQR);
-  renderInfoCard();
-  renderModal();
+function showErrorModal(title,qrtext){
+  modalCard.classList.add('errorModal');
+  modalNom.textContent=title;
+  modalTogglePagat.style.display="none";
+  modalToggleObjectes.style.display="none";
+  modalExtraInfo.innerHTML=`<div class="modalRowValue" style="color:#ff4d4d;">${qrtext}</div>`;
+  openModal();
 }
 
-/* listeners para botones de abajo */
-btnTogglePagat.addEventListener('click', togglePagat);
-btnToggleObjectes.addEventListener('click', toggleObjectes);
+// === MODAL ===
+function renderModal(){
+  modalCard.classList.remove('errorModal');
+  modalTogglePagat.style.display="block";
+  modalToggleObjectes.style.display="block";
+  modalNom.textContent=currentData.nom||"(sense nom)";
+  updateButtonVisuals();
+  let html="";
+  if(currentData.dataPagament) html+=`<div class="modalSmallNote">Data pagament: ${currentData.dataPagament}</div>`;
+  if(currentData.ultimScan) html+=`<div class="modalSmallNote">Últim escaneig: ${currentData.ultimScan}</div>`;
+  modalExtraInfo.innerHTML=html;
+}
 
-/* listeners para botones dentro del modal */
-modalTogglePagat.addEventListener('click', togglePagat);
-modalToggleObjectes.addEventListener('click', toggleObjectes);
-
-/* listener del botón grande de cámara */
-scanBtn.addEventListener('click', startStop);
+function updateButtonVisuals(){
+  modalTogglePagat.textContent=localPagat?"PAGAT ✅":"NO PAGAT ❌";
+  modalTogglePagat.className="state-btn "+(localPagat?"greenState":"redState");
+  modalToggleObjectes.textContent=localObjectes?"OBJECTES DONATS 🎁":"OBJECTES PENDENTS 📦";
+  modalToggleObjectes.className="state-btn "+(localObjectes?"greenState":"redState");
+}
+modalTogglePagat.addEventListener('click',()=>{localPagat=!localPagat;updateButtonVisuals();});
+modalToggleObjectes.addEventListener('click',()=>{localObjectes=!localObjectes;updateButtonVisuals();});
+modalCloseBtn.addEventListener('click',async()=>{
+  if(currentData&&currentQR&&!modalCard.classList.contains('errorModal')){
+    if(localPagat!==currentData.pagat) await apiSetPagat(currentQR,localPagat?"SI":"NO");
+    if(localObjectes!==currentData.objectesEntregats) await apiSetObjectes(currentQR,localObjectes?"SI":"NO");
+  }
+  closeModal(); locked=false; startStop();
+});
+scanBtn.addEventListener('click',startStop);
 </script>
 </body>
 </html>
