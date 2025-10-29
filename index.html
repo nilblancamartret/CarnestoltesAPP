@@ -82,7 +82,7 @@
     overflow-y: auto;
   }
 
-  /* Tarjeta info fixa sota la càmera */
+  /* Tarjeta info sota la càmera */
   #infoCard { display:none; }
 
   .row {
@@ -226,6 +226,14 @@
     font-weight: 600;
   }
 
+  .btn-col-modal {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    width: 100%;
+    margin-top: .5rem;
+  }
+
   #modalCloseBtn {
     width: 100%;
     background: #0070f3;
@@ -255,7 +263,7 @@
   <canvas id="framegrab"></canvas>
 </div>
 
-<!-- Info persona (persistent sota càmera) -->
+<!-- Info persona (fix sota la càmera) -->
 <div class="card" id="infoCard">
   <div class="row">
     <div class="label">Nom</div>
@@ -284,7 +292,7 @@
   <div id="debugLog">📹 Llista d'esdeveniments…</div>
 </div>
 
-<!-- Popup modal resum -->
+<!-- Popup modal resum i accions -->
 <div id="modalOverlay">
   <div id="modalCard">
     <div id="modalTitle">Detalls participant</div>
@@ -304,16 +312,23 @@
       <div class="modalRowValue" id="modalObjectes">-</div>
     </div>
 
-    <button id="modalCloseBtn">OK</button>
+    <div class="btn-col-modal">
+      <button class="state-btn" id="modalTogglePagat">...</button>
+      <button class="state-btn" id="modalToggleObjectes">...</button>
+    </div>
+
+    <button id="modalCloseBtn">OK / SEGUENT</button>
   </div>
 </div>
 
 <script>
 /* =============== CONFIG =============== */
+// IMPORTANTE: si vuelves a desplegar Apps Script y cambia la URL, actualiza aquí:
 const API_BASE = "https://script.google.com/macros/s/AKfycbw_D0Gf5yja1d8hgIULvsdS8tKjGyt2W1P_8G6qzPttiNIsd3UpCADV89yONey3H1Z4uw/exec";
 
 /* =============== STATE =============== */
-let scanning = false;
+let scanning = false;     // cámara encendida?
+let locked = false;       // estamos gestionando un QR y no queremos leer más aún?
 let streamRef = null;
 let detector = null;
 
@@ -341,6 +356,8 @@ const modalCloseBtn = document.getElementById('modalCloseBtn');
 const modalNom = document.getElementById('modalNom');
 const modalPagament = document.getElementById('modalPagament');
 const modalObjectes = document.getElementById('modalObjectes');
+const modalTogglePagat = document.getElementById('modalTogglePagat');
+const modalToggleObjectes = document.getElementById('modalToggleObjectes');
 
 /* =============== UI HELPERS =============== */
 function log(msg){
@@ -365,14 +382,23 @@ function openModal() {
 }
 function closeModal() {
   modalOverlay.style.display = "none";
+
+  // desbloquear para siguiente persona
+  locked = false;
+
+  // reanudar escaneo si la cámara sigue encendida
+  if (scanning) {
+    requestAnimationFrame(scanLoop);
+  }
 }
 
 modalCloseBtn.addEventListener('click', closeModal);
+// tocar fuera del cuadro también cierra
 modalOverlay.addEventListener('click', (ev)=>{
   if (ev.target === modalOverlay) closeModal();
 });
 
-/* Render avisos tipus còpia etc */
+/* avisos tipo "QR inexistent", "possible còpia"... */
 function renderAlerts() {
   alertContainer.innerHTML = "";
 
@@ -401,14 +427,21 @@ function renderAlerts() {
   }
 }
 
-/* Actualitza els botons toggle segons l'estat actual */
+/* Actualitza TODOS los botones toggle (tarjeta y modal) según estado actual */
 function renderToggleButtons() {
+  // estado desconocido
   if (!currentData) {
     btnTogglePagat.textContent = "Pagament ?";
     btnTogglePagat.className = "state-btn redState";
 
     btnToggleObjectes.textContent = "Objectes ?";
     btnToggleObjectes.className = "state-btn redState";
+
+    modalTogglePagat.textContent = "Pagament ?";
+    modalTogglePagat.className = "state-btn redState";
+
+    modalToggleObjectes.textContent = "Objectes ?";
+    modalToggleObjectes.className = "state-btn redState";
     return;
   }
 
@@ -416,18 +449,30 @@ function renderToggleButtons() {
   if (currentData.pagat === true) {
     btnTogglePagat.textContent = "PAGAT ✅";
     btnTogglePagat.className = "state-btn greenState";
+
+    modalTogglePagat.textContent = "PAGAT ✅";
+    modalTogglePagat.className = "state-btn greenState";
   } else {
     btnTogglePagat.textContent = "NO PAGAT ❌";
     btnTogglePagat.className = "state-btn redState";
+
+    modalTogglePagat.textContent = "NO PAGAT ❌";
+    modalTogglePagat.className = "state-btn redState";
   }
 
   // OBJECTES
   if (currentData.objectesEntregats === true) {
     btnToggleObjectes.textContent = "OBJECTES DONATS 🎁";
     btnToggleObjectes.className = "state-btn greenState";
+
+    modalToggleObjectes.textContent = "OBJECTES DONATS 🎁";
+    modalToggleObjectes.className = "state-btn greenState";
   } else {
     btnToggleObjectes.textContent = "OBJECTES PENDENTS 📦";
     btnToggleObjectes.className = "state-btn redState";
+
+    modalToggleObjectes.textContent = "OBJECTES PENDENTS 📦";
+    modalToggleObjectes.className = "state-btn redState";
   }
 }
 
@@ -456,13 +501,14 @@ function renderInfoCard() {
   renderToggleButtons();
 }
 
-/* Render popup modal */
+/* Render popup modal (incluye texto y luego sincroniza botones modal) */
 function renderModal() {
   if (!currentData) {
     modalNom.textContent = "(sense dades)";
     modalPagament.innerHTML = statusLabelRed("?");
     modalObjectes.innerHTML = statusLabelRed("?");
     openModal();
+    renderToggleButtons();
     return;
   }
 
@@ -481,6 +527,7 @@ function renderModal() {
   }
 
   openModal();
+  renderToggleButtons(); // asegura que botones modal tengan color/texto correcto
 }
 
 /* =============== API HELPERS =============== */
@@ -514,28 +561,27 @@ async function apiSetObjectes(qr, value) {
   return await safeFetchJSON(url);
 }
 
-/* =============== LÒGICA DE LECTURA QR =============== */
-async function onQRDetected(qrText) {
-  if (qrText === lastShownQR) {
-    // si escanegues el mateix QR repetit, igualment volem refrescar i treure popup
-    // pero no spamejem logs
-  } else {
-    log("QR detectat: " + qrText);
-  }
+/* =============== LÒGICA DE GESTIÓ D'UN QR DETECTAT =============== */
+async function handleDetectedQR(qrText) {
+  // bloqueamos escaneo para no disparar más popups hasta que acabemos
+  locked = true;
 
   lastShownQR = qrText;
   currentQR = qrText;
+  log("QR detectat: " + qrText);
 
-  // demanem dades al backend
+  // pedimos al backend la info de esa persona
   currentData = await apiLookup(qrText);
 
-  // actualitzem UI fixa i modal
+  // pintamos info fija + popup
   renderInfoCard();
   renderModal();
 }
 
+/* =============== LOOP D'ESCANEIG =============== */
 async function scanLoop() {
-  if (!scanning) return;
+  // si la càmera no està activa o estem lockejats, sortim
+  if (!scanning || locked) return;
 
   const w = preview.videoWidth;
   const h = preview.videoHeight;
@@ -551,15 +597,16 @@ async function scanLoop() {
       if (barcodes && barcodes.length > 0) {
         const raw = barcodes[0].rawValue || barcodes[0].raw || "";
         if (raw) {
-          onQRDetected(raw.trim());
+          await handleDetectedQR(raw.trim());
+          return; // paramos aquí, no seguimos escaneando hasta desbloquear
         }
       }
     } catch (err) {
-      // ignorar errors momentanis de detecció
+      // ignorar errors puntuals
     }
   }
 
-  if (scanning) {
+  if (scanning && !locked) {
     requestAnimationFrame(scanLoop);
   }
 }
@@ -567,7 +614,9 @@ async function scanLoop() {
 /* =============== START/STOP CÀMERA =============== */
 async function startStop() {
   if (scanning) {
+    // apagar escaneo y cámara
     scanning = false;
+    locked = false;
     scanBtn.classList.remove('active');
     scanBtn.textContent = "ESCANEJAR QR";
 
@@ -581,6 +630,7 @@ async function startStop() {
 
   // iniciar
   scanning = true;
+  locked = false;
   scanBtn.classList.add('active');
   scanBtn.textContent = "CAM ACTIVA (TOCA PER ATURAR)";
   log("📹 Obrint càmera...");
@@ -614,6 +664,7 @@ async function startStop() {
     alert("No puc obrir càmera: " + err.message);
 
     scanning = false;
+    locked = false;
     scanBtn.classList.remove('active');
     scanBtn.textContent = "ESCANEJAR QR";
 
@@ -624,33 +675,34 @@ async function startStop() {
   }
 }
 
-/* =============== TOGGLES (PAGAT / OBJECTES) =============== */
-btnTogglePagat.addEventListener('click', async () => {
+/* =============== TOGGLES (pagat / objectes) =============== */
+async function togglePagat() {
   if (!currentQR || !currentData) return;
-
-  // calculem quin valor hem d'enviar
   const newValue = currentData.pagat === true ? "NO" : "SI";
-
   await apiSetPagat(currentQR, newValue);
   currentData = await apiLookup(currentQR);
-
   renderInfoCard();
-  renderModal(); // refresca el popup per feedback visual immediat
-});
+  renderModal();
+}
 
-btnToggleObjectes.addEventListener('click', async () => {
+async function toggleObjectes() {
   if (!currentQR || !currentData) return;
-
   const newValue = currentData.objectesEntregats === true ? "NO" : "SI";
-
   await apiSetObjectes(currentQR, newValue);
   currentData = await apiLookup(currentQR);
-
   renderInfoCard();
-  renderModal(); // refresca el popup
-});
+  renderModal();
+}
 
-/* =============== INIT =============== */
+/* listeners para botones de abajo */
+btnTogglePagat.addEventListener('click', togglePagat);
+btnToggleObjectes.addEventListener('click', toggleObjectes);
+
+/* listeners para botones dentro del modal */
+modalTogglePagat.addEventListener('click', togglePagat);
+modalToggleObjectes.addEventListener('click', toggleObjectes);
+
+/* listener del botón grande de cámara */
 scanBtn.addEventListener('click', startStop);
 </script>
 </body>
