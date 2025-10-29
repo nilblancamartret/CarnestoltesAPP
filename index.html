@@ -1,411 +1,156 @@
 <!DOCTYPE html>
 <html lang="ca">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes · mínim</title>
-<style>
-  body {
-    font-family: system-ui, sans-serif;
-    background: #111;
-    color: #fff;
-    margin: 0;
-    padding: 1rem;
-  }
-
-  h1 {
-    text-align: center;
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 1rem;
-    color: #fff;
-  }
-
-  .card {
-    background: #1e1e1e;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  button {
-    width: 100%;
-    font-size: 1rem;
-    font-weight: 600;
-    padding: .8rem;
-    border-radius: 8px;
-    border: 0;
-    background: #444;
-    color: #fff;
-    margin-bottom: .5rem;
-  }
-  button.active-ok {
-    background: #0a0;
-    color: #000;
-  }
-  button.active-bad {
-    background: #a00;
-    color: #fff;
-  }
-
-  video {
-    width: 100%;
-    border-radius: 8px;
-    background: #000;
-    min-height: 200px;
-    object-fit: cover;
-    margin-top: .5rem;
-  }
-
-  #debugLog {
-    font-size: .75rem;
-    color: #888;
-    background: #000;
-    border-radius: 6px;
-    padding: .5rem;
-    min-height: 2rem;
-    white-space: pre-line;
-    margin-top: .5rem;
-  }
-
-  .row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: .4rem;
-    font-size: .9rem;
-  }
-  .row .label {
-    color: #aaa;
-    font-weight: 500;
-  }
-  .row .value {
-    font-weight: 600;
-    color: #fff;
-    text-align: right;
-    word-break: break-word;
-    max-width: 60%;
-  }
-
-  .alert {
-    border-radius: 6px;
-    padding: .5rem;
-    font-size: .8rem;
-    font-weight: 600;
-    margin-top: .5rem;
-  }
-  .alert.red {
-    background: #3a0000;
-    border: 1px solid #ff4d4d;
-    color: #ff4d4d;
-  }
-  .alert.yellow {
-    background: #3a3000;
-    border: 1px solid #ffd84d;
-    color: #ffd84d;
-  }
-
-  .sectionTitle {
-    font-size: .8rem;
-    font-weight: 600;
-    color: #ccc;
-    margin: .75rem 0 .4rem;
-    text-transform: uppercase;
-    letter-spacing: .02em;
-  }
-
-  .btnRow {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-  }
-  .halfBtn {
-    flex: 1 1 calc(50% - .5rem);
-    min-width: calc(50% - .5rem);
-  }
-
-  #infoCard {
-    display: none;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Carnestoltes ULTRALIGHT ✅</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111;
+      color: #fff;
+      margin: 0;
+      padding: 1rem;
+    }
+    h1 { text-align: center; font-size: 1.1rem; }
+    video { width: 100%; border-radius: 10px; background: #000; min-height: 200px; }
+    button {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: .5rem;
+      border: none;
+      border-radius: 8px;
+      background: #0070f3;
+      color: #fff;
+    }
+    pre {
+      background: #000;
+      padding: .5rem;
+      border-radius: 8px;
+      font-size: .8rem;
+      color: #0f0;
+      max-height: 6rem;
+      overflow-y: auto;
+    }
+    .info {
+      background: #1e1e1e;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+  </style>
 </head>
 <body>
+  <h1>Carnestoltes ULTRALIGHT ✅</h1>
 
-<h1>Carnestoltes · mínim</h1>
-
-<div class="card">
-  <button id="toggleScanBtn">ESCANEJAR (càmera OFF)</button>
+  <button id="scanBtn">ESCANEJAR QR</button>
   <video id="video" playsinline autoplay muted></video>
-  <div id="debugLog"></div>
-</div>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <pre id="log"></pre>
 
-<div class="card" id="infoCard">
-  <div class="row">
-    <div class="label">QR</div>
-    <div class="value" id="fieldQR">-</div>
-  </div>
-  <div class="row">
-    <div class="label">Nom</div>
-    <div class="value" id="fieldNom">-</div>
-  </div>
-  <div class="row">
-    <div class="label">Pagat?</div>
-    <div class="value" id="fieldPagat">-</div>
-  </div>
-  <div class="row">
-    <div class="label">Data pagament</div>
-    <div class="value" id="fieldDataPagament">-</div>
-  </div>
-  <div class="row">
-    <div class="label">Objectes?</div>
-    <div class="value" id="fieldObjectes">-</div>
+  <div class="info" id="info" style="display:none;">
+    <p><b>QR:</b> <span id="qrText"></span></p>
+    <p><b>Nom:</b> <span id="nom"></span></p>
+    <p><b>Pagat:</b> <span id="pagat"></span></p>
+    <p><b>Objectes:</b> <span id="objectes"></span></p>
   </div>
 
-  <div id="alertBox"></div>
+  <!-- jsQR ligero -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script>
+    const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
-  <div class="sectionTitle">Pagament</div>
-  <div class="btnRow">
-    <button class="halfBtn" id="btnMarkPagat">Marcar PAGAT</button>
-    <button class="halfBtn" id="btnMarkNoPagat">Marcar NO PAGAT</button>
-  </div>
+    const scanBtn = document.getElementById("scanBtn");
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const logBox = document.getElementById("log");
+    const infoBox = document.getElementById("info");
+    const qrText = document.getElementById("qrText");
+    const nom = document.getElementById("nom");
+    const pagat = document.getElementById("pagat");
+    const objectes = document.getElementById("objectes");
 
-  <div class="sectionTitle">Objectes</div>
-  <div class="btnRow">
-    <button class="halfBtn" id="btnMarkObjYes">Marcar OBJECTES ENTREGATS</button>
-    <button class="halfBtn" id="btnMarkObjNo">Marcar OBJECTES NO ENTREGATS</button>
-  </div>
-</div>
+    let scanning = false;
+    let stream = null;
+    let ctx = canvas.getContext("2d");
 
-<!-- ZXing -->
-<script src="https://unpkg.com/@zxing/browser@latest"></script>
-<script>
-  // CONFIG
-  const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
-
-  // State
-  let scanning = false;
-  let streamRef = null;
-  let animationHandle = null;
-  let currentQR = null;
-  let currentData = null;
-
-  const codeReader = new ZXing.BrowserMultiFormatReader();
-
-  // DOM elements
-  const toggleScanBtn = document.getElementById("toggleScanBtn");
-  const videoEl = document.getElementById("video");
-  const debugLog = document.getElementById("debugLog");
-
-  const infoCard = document.getElementById("infoCard");
-  const fieldQR = document.getElementById("fieldQR");
-  const fieldNom = document.getElementById("fieldNom");
-  const fieldPagat = document.getElementById("fieldPagat");
-  const fieldDataPagament = document.getElementById("fieldDataPagament");
-  const fieldObjectes = document.getElementById("fieldObjectes");
-  const alertBox = document.getElementById("alertBox");
-
-  const btnMarkPagat = document.getElementById("btnMarkPagat");
-  const btnMarkNoPagat = document.getElementById("btnMarkNoPagat");
-  const btnMarkObjYes = document.getElementById("btnMarkObjYes");
-  const btnMarkObjNo = document.getElementById("btnMarkObjNo");
-
-  function log(msg) {
-    console.log(msg);
-    debugLog.textContent += msg + "\n";
-    debugLog.scrollTop = debugLog.scrollHeight;
-  }
-
-  // Render info panel
-  function renderInfo() {
-    if (!currentData) {
-      infoCard.style.display = "none";
-      return;
+    function log(msg) {
+      console.log(msg);
+      logBox.textContent += msg + "\n";
+      logBox.scrollTop = logBox.scrollHeight;
     }
-    infoCard.style.display = "block";
 
-    // basic fields
-    fieldQR.textContent = currentQR || "-";
-    fieldNom.textContent = currentData.nom || "(sense nom)";
-
-    fieldPagat.textContent = currentData.pagat ? "PAGAT" : "NO PAGAT";
-    fieldPagat.style.color = currentData.pagat ? "#0f0" : "#f33";
-
-    fieldDataPagament.textContent = currentData.dataPagament || "-";
-
-    fieldObjectes.textContent = currentData.objectesEntregats ? "ENTREGATS" : "NO ENTREGATS";
-    fieldObjectes.style.color = currentData.objectesEntregats ? "#0f0" : "#f33";
-
-    // alerts
-    alertBox.innerHTML = "";
-    if (!currentData.found) {
-      const d = document.createElement("div");
-      d.className = "alert red";
-      d.textContent = "❌ QR inexistent";
-      alertBox.appendChild(d);
+    async function lookup(qr) {
+      const res = await fetch(`${API_BASE}?action=lookup&qr=${encodeURIComponent(qr)}`);
+      return res.json();
     }
-    if (currentData.warningReutilitzat) {
-      const d = document.createElement("div");
-      d.className = "alert red";
-      d.textContent = "❌ QR reutilitzat fa poc (possible còpia)";
-      alertBox.appendChild(d);
-    }
-    if (!currentData.nom || currentData.nom.trim() === "") {
-      const d = document.createElement("div");
-      d.className = "alert yellow";
-      d.textContent = "⚠ Sense nom associat";
-      alertBox.appendChild(d);
-    }
-  }
 
-  // API calls
-  async function apiLookup(qr) {
-    const url = `${API_BASE}?action=lookup&qr=${encodeURIComponent(qr)}`;
-    const res = await fetch(url);
-    return res.json();
-  }
-
-  async function apiSetPagat(qr, value) {
-    const url = `${API_BASE}?action=setPagat&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
-    const res = await fetch(url);
-    return res.json();
-  }
-
-  async function apiSetObjectes(qr, value) {
-    const url = `${API_BASE}?action=setObjectes&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
-    const res = await fetch(url);
-    return res.json();
-  }
-
-  // When we get a QR successfully
-  async function onQRDetected(qrText) {
-    log("QR detectat: " + qrText);
-
-    // stop scanning immediately so it doesn't keep reading
-    stopCamera();
-
-    currentQR = qrText;
-    currentData = await apiLookup(qrText);
-    log("Resposta lookup: " + JSON.stringify(currentData));
-
-    renderInfo();
-  }
-
-  // Camera loop: draw video frame to canvas and try to decode
-  async function scanFrameLoop(videoEl, canvas, ctx) {
-    if (!scanning) return;
-
-    const w = videoEl.videoWidth;
-    const h = videoEl.videoHeight;
-
-    if (w && h) {
-      canvas.width = w;
-      canvas.height = h;
-      ctx.drawImage(videoEl, 0, 0, w, h);
+    async function startScan() {
+      if (scanning) return;
+      scanning = true;
+      scanBtn.textContent = "ESCANEJANT...";
 
       try {
-        const result = await codeReader.decodeFromCanvas(canvas);
-        if (result && result.getText) {
-          onQRDetected(result.getText());
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+        await video.play();
+        log("🎥 Càmera oberta");
+
+        requestAnimationFrame(tick);
+      } catch (err) {
+        log("❌ Error càmera: " + err.message);
+        scanning = false;
+      }
+    }
+
+    function stopScan() {
+      scanning = false;
+      scanBtn.textContent = "ESCANEJAR QR";
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+    }
+
+    async function tick() {
+      if (!scanning) return;
+
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+        if (code) {
+          const qr = code.data.trim();
+          log("QR detectat: " + qr);
+          stopScan();
+
+          const data = await lookup(qr);
+          log("Resposta: " + JSON.stringify(data));
+
+          qrText.textContent = qr;
+          nom.textContent = data.nom || "-";
+          pagat.textContent = data.pagat ? "✅ SI" : "❌ NO";
+          objectes.textContent = data.objectesEntregats ? "✅ ENTREGATS" : "❌ NO";
+
+          infoBox.style.display = "block";
           return;
         }
-      } catch (err) {
-        // no QR yet, ignore
       }
+      requestAnimationFrame(tick);
     }
 
-    animationHandle = requestAnimationFrame(() => scanFrameLoop(videoEl, canvas, ctx));
-  }
-
-  // Start camera
-  async function startCamera() {
-    if (scanning) return;
-    scanning = true;
-    toggleScanBtn.textContent = "ESCANEJANT (càmera ON)";
-
-    log("Obrint càmera...");
-    try {
-      streamRef = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false
-      });
-
-      videoEl.srcObject = streamRef;
-
-      try {
-        await videoEl.play();
-      } catch (e) {
-        log("video.play error: " + e);
+    scanBtn.addEventListener("click", () => {
+      if (scanning) {
+        stopScan();
+      } else {
+        startScan();
       }
-
-      log("Càmera oberta ✅");
-      // Create canvas for frame grabbing
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      animationHandle = requestAnimationFrame(() => scanFrameLoop(videoEl, canvas, ctx));
-
-    } catch (err) {
-      log("ERROR càmera: " + err.name + " / " + err.message);
-      stopCamera();
-    }
-  }
-
-  // Stop camera
-  function stopCamera() {
-    if (!scanning) return;
-    scanning = false;
-    toggleScanBtn.textContent = "ESCANEJAR (càmera OFF)";
-
-    if (animationHandle) {
-      cancelAnimationFrame(animationHandle);
-      animationHandle = null;
-    }
-
-    if (streamRef) {
-      streamRef.getTracks().forEach(t => t.stop());
-      streamRef = null;
-    }
-  }
-
-  // Button: toggle scanning
-  toggleScanBtn.addEventListener("click", () => {
-    if (scanning) {
-      stopCamera();
-    } else {
-      startCamera();
-    }
-  });
-
-  // Mark as PAGAT
-  btnMarkPagat.addEventListener("click", async () => {
-    if (!currentQR) { log("Cap QR carregat"); return; }
-    await apiSetPagat(currentQR, "SI");
-    currentData = await apiLookup(currentQR);
-    renderInfo();
-  });
-
-  // Mark as NO PAGAT
-  btnMarkNoPagat.addEventListener("click", async () => {
-    if (!currentQR) { log("Cap QR carregat"); return; }
-    await apiSetPagat(currentQR, "NO");
-    currentData = await apiLookup(currentQR);
-    renderInfo();
-  });
-
-  // Mark OBJECTES ENTREGATS
-  btnMarkObjYes.addEventListener("click", async () => {
-    if (!currentQR) { log("Cap QR carregat"); return; }
-    await apiSetObjectes(currentQR, "SI");
-    currentData = await apiLookup(currentQR);
-    renderInfo();
-  });
-
-  // Mark OBJECTES NO ENTREGATS
-  btnMarkObjNo.addEventListener("click", async () => {
-    if (!currentQR) { log("Cap QR carregat"); return; }
-    await apiSetObjectes(currentQR, "NO");
-    currentData = await apiLookup(currentQR);
-    renderInfo();
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
