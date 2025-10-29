@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes LIVE ✅</title>
+<title>Carnestoltes PROD ✅</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
@@ -24,6 +24,7 @@
     flex-wrap: wrap;
     margin: 0 0 1rem;
   }
+
   .badge {
     background: #0a0;
     color: #000;
@@ -44,7 +45,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
   }
 
-  button#scanBtn {
+  #scanBtn {
     width: 100%;
     font-size: 1.1rem;
     font-weight: 600;
@@ -55,7 +56,8 @@
     color: #fff;
     margin-bottom: 1rem;
   }
-  button#scanBtn.scanning {
+
+  #scanBtn.scanning {
     background: #00b800;
     color: #000;
   }
@@ -70,7 +72,16 @@
 
   canvas { display:none; }
 
-  /* panel info última persona */
+  #debugLog {
+    font-size: .8rem;
+    line-height: 1.4;
+    color: #0f0;
+    font-family: monospace;
+    white-space: pre-line;
+    min-height: 2.5em;
+  }
+
+  /* panel de última persona escaneada */
   .row {
     display: flex;
     justify-content: space-between;
@@ -78,11 +89,13 @@
     margin-bottom: .75rem;
     flex-wrap: wrap;
   }
+
   .label {
     font-size: .8rem;
     color: #aaa;
     flex: 0 0 40%;
   }
+
   .value {
     font-size: 1rem;
     font-weight: 600;
@@ -91,6 +104,7 @@
     text-align: right;
     word-break: break-word;
   }
+
   .qr-code-value {
     font-size: .8rem;
     font-weight: 400;
@@ -106,11 +120,13 @@
     font-weight: 600;
     margin-bottom: .5rem;
   }
+
   .warning-red {
     background: #3a0000;
     color: #ff4d4d;
     border: 1px solid #ff4d4d;
   }
+
   .warning-yellow {
     background: #3a3000;
     color: #ffd84d;
@@ -130,6 +146,7 @@
     flex-wrap: wrap;
     margin-bottom: .5rem;
   }
+
   .state-btn {
     flex: 1 1 calc(50% - .5rem);
     min-width: calc(50% - .5rem);
@@ -141,16 +158,20 @@
     color: #fff;
     text-align: center;
   }
+
   .verde {
     background: #064d06;
   }
+
   .verde.active {
     background: #00b800;
     color: #000;
   }
+
   .rojo {
     background: #4d0606;
   }
+
   .rojo.active {
     background: #d60000;
   }
@@ -162,20 +183,15 @@
     margin-top: .5rem;
   }
 
-  #debugLog {
-    font-size: .8rem;
-    line-height: 1.4;
-    color: #0f0;
-    font-family: monospace;
-    white-space: pre-line;
-  }
+  #infoCard { display:none; }
+
 </style>
 </head>
 <body>
 
 <h1>
-  Carnestoltes LIVE
-  <span class="badge">RUN</span>
+  Carnestoltes PROD
+  <span class="badge">ONLINE</span>
 </h1>
 
 <div class="scan-card">
@@ -184,7 +200,7 @@
   <canvas id="framegrab"></canvas>
 </div>
 
-<div class="panel-card" id="infoCard" style="display:none;">
+<div class="panel-card" id="infoCard">
   <div class="row">
     <div class="label">Nom</div>
     <div class="value" id="nomValue">-</div>
@@ -212,28 +228,35 @@
   <div class="footer-note" id="dataPagamentNote"></div>
 </div>
 
-<div class="log-card">
-  <div id="debugLog">📹 Esperant…</div>
+<div class="panel-card">
+  <div id="debugLog">📹 Llista d'esdeveniments…</div>
 </div>
 
+<!-- librería ZXing -->
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
+
 <script>
+  // ==================
   // CONFIG
+  // ==================
   const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
-  // Estado
+  // ==================
+  // ESTADO
+  // ==================
   let scanning = false;
   let streamRef = null;
   let currentQR = null;
   let currentData = null;
-  let lastDecoded = null; // para no repetir la misma persona en bucle
 
   const codeReader = new ZXing.BrowserMultiFormatReader();
 
-  // DOM refs
+  // ==================
+  // DOM
+  // ==================
   const scanBtn = document.getElementById('scanBtn');
   const preview = document.getElementById('preview');
-  const canvas = document.getElementById('framegrab');
+  const canvas  = document.getElementById('framegrab');
   const debugLog = document.getElementById('debugLog');
 
   const infoCard = document.getElementById('infoCard');
@@ -247,35 +270,42 @@
   const btnObjectesSI = document.getElementById('btnObjectesSI');
   const btnObjectesNO = document.getElementById('btnObjectesNO');
 
+  // ==================
+  // HELPERS UI
+  // ==================
   function log(msg){
     console.log(msg);
     debugLog.textContent += "\n" + msg;
     debugLog.scrollTop = debugLog.scrollHeight;
   }
 
-  function setDebug(msg){
-    debugLog.textContent = msg;
+  function showInfoCard() {
+    infoCard.style.display = "block";
   }
 
   function renderButtonStates() {
+    // Pagat
     if (currentData && currentData.pagat === true) {
-      btnPagat.classList.add('active');
-      btnNoPagat.classList.remove('active');
+        btnPagat.classList.add('active');
+        btnNoPagat.classList.remove('active');
     } else {
-      btnPagat.classList.remove('active');
-      btnNoPagat.classList.add('active');
+        btnPagat.classList.remove('active');
+        btnNoPagat.classList.add('active');
     }
+
+    // Objectes
     if (currentData && currentData.objectesEntregats === true) {
-      btnObjectesSI.classList.add('active');
-      btnObjectesNO.classList.remove('active');
+        btnObjectesSI.classList.add('active');
+        btnObjectesNO.classList.remove('active');
     } else {
-      btnObjectesSI.classList.remove('active');
-      btnObjectesNO.classList.add('active');
+        btnObjectesSI.classList.remove('active');
+        btnObjectesNO.classList.add('active');
     }
   }
 
   function renderAlerts() {
     alertContainer.innerHTML = "";
+
     if (!currentData) return;
 
     if (currentData.found === false) {
@@ -301,10 +331,10 @@
     }
   }
 
-  function renderInfoCard() {
+  function renderInfo() {
     if (!currentData) return;
 
-    infoCard.style.display = "block";
+    showInfoCard();
 
     if (currentData.found === false) {
       nomValue.textContent = "-";
@@ -316,7 +346,7 @@
     }
 
     nomValue.textContent = currentData.nom || "(sense nom)";
-    qrValue.textContent = currentQR || "(sense)";
+    qrValue.textContent  = currentQR || "(sense)";
 
     if (currentData.pagat && currentData.dataPagament) {
       dataPagamentNote.textContent = "Pagat el " + currentData.dataPagament;
@@ -328,58 +358,66 @@
     renderButtonStates();
   }
 
+  // ==================
+  // API CALLS
+  // ==================
   async function apiLookup(qr) {
-    const url = `${API_BASE}?action=lookup&qr=${encodeURIComponent(qr)}`;
+    const url = API_BASE + "?action=lookup&qr=" + encodeURIComponent(qr);
     const res = await fetch(url);
     return res.json();
   }
 
   async function apiSetPagat(qr, value) {
-    const url = `${API_BASE}?action=setPagat&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
+    const url = API_BASE + "?action=setPagat&qr=" + encodeURIComponent(qr) +
+                "&value=" + encodeURIComponent(value);
     const res = await fetch(url);
     return res.json();
   }
 
   async function apiSetObjectes(qr, value) {
-    const url = `${API_BASE}?action=setObjectes&qr=${encodeURIComponent(qr)}&value=${encodeURIComponent(value)}`;
+    const url = API_BASE + "?action=setObjectes&qr=" + encodeURIComponent(qr) +
+                "&value=" + encodeURIComponent(value);
     const res = await fetch(url);
     return res.json();
   }
 
+  // ==================
+  // ESCANEO Y LOOP
+  // ==================
   async function handleScannedCode(qrText){
-    if (qrText === lastDecoded) {
-      // mismo código repetido en frames seguidos -> ignora para no spamear
-      return;
-    }
-    lastDecoded = qrText;
-
-    log(`QR detectat: ${qrText}`);
+    log("QR detectat: " + qrText);
 
     currentQR = qrText;
-    currentData = await apiLookup(qrText);
-
-    renderInfoCard();
+    try {
+      currentData = await apiLookup(qrText);
+      // pinta panel
+      renderInfo();
+    } catch (err) {
+      log("Error fent lookup: " + err);
+    }
   }
 
-  // bucle continuo: lee frame por frame SIN parar cámara
   async function frameLoop() {
     if (!scanning) return;
 
     const w = preview.videoWidth;
     const h = preview.videoHeight;
+
     if (w && h) {
-      const ctx = canvas.getContext('2d');
+      // copiar frame actual al canvas
       canvas.width = w;
       canvas.height = h;
+      const ctx = canvas.getContext('2d');
       ctx.drawImage(preview, 0, 0, w, h);
 
+      // intentar leer QR de ese frame
       try {
         const result = await codeReader.decodeFromCanvas(canvas);
         if (result && result.getText) {
           handleScannedCode(result.getText());
         }
       } catch (err) {
-        // normal cuando no hay QR claro en ese frame
+        // normal si aún no ve un QR claro
       }
     }
 
@@ -388,12 +426,12 @@
     }
   }
 
-  async function startScanning(){
+  async function startScanning() {
     if (scanning) return;
     scanning = true;
     scanBtn.classList.add('scanning');
     scanBtn.textContent = "ESCANEJANT (CAM ACTIVA)";
-    setDebug("📹 Obrint càmera...");
+    log("📹 Obrint càmera...");
 
     try {
       streamRef = await navigator.mediaDevices.getUserMedia({
@@ -404,30 +442,33 @@
       await preview.play();
       log("📹 Càmera oberta");
 
-      // empezamos bucle
+      // arrancar loop continuo
       requestAnimationFrame(frameLoop);
 
-    } catch(err){
+    } catch (err) {
       log("ERROR càmera: " + err.name + " / " + err.message);
       alert("No puc obrir càmera: " + err.message);
       stopScanning();
     }
   }
 
-  function stopScanning(){
+  function stopScanning() {
     if (!scanning) return;
     scanning = false;
     scanBtn.classList.remove('scanning');
     scanBtn.textContent = "ESCANEJAR QR";
 
-    if (streamRef){
+    if (streamRef) {
       streamRef.getTracks().forEach(t => t.stop());
       streamRef = null;
     }
-    setDebug("📹 Aturada");
+
+    log("📹 Càmera aturada");
   }
 
-  // UI events
+  // ==================
+  // EVENTOS BOTONES
+  // ==================
   scanBtn.addEventListener('click', () => {
     if (scanning) {
       stopScanning();
@@ -440,29 +481,30 @@
     if (!currentQR) return;
     await apiSetPagat(currentQR, "SI");
     currentData = await apiLookup(currentQR);
-    renderInfoCard();
+    renderInfo();
   });
 
   btnNoPagat.addEventListener('click', async () => {
     if (!currentQR) return;
     await apiSetPagat(currentQR, "NO");
     currentData = await apiLookup(currentQR);
-    renderInfoCard();
+    renderInfo();
   });
 
   btnObjectesSI.addEventListener('click', async () => {
     if (!currentQR) return;
     await apiSetObjectes(currentQR, "SI");
     currentData = await apiLookup(currentQR);
-    renderInfoCard();
+    renderInfo();
   });
 
   btnObjectesNO.addEventListener('click', async () => {
     if (!currentQR) return;
     await apiSetObjectes(currentQR, "NO");
     currentData = await apiLookup(currentQR);
-    renderInfoCard();
+    renderInfo();
   });
+
 </script>
 </body>
 </html>
