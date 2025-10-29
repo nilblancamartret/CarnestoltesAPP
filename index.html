@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes JM ✅</title>
+<title>Carnestoltes FINAL3 ✅</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
@@ -76,10 +76,11 @@
     color: #0f0;
     font-family: monospace;
     white-space: pre-line;
-    min-height: 2.5em;
+    min-height: 3em;
+    max-height: 8em;
+    overflow-y: auto;
   }
 
-  /* Panel persona */
   #infoCard { display:none; }
 
   .row {
@@ -161,7 +162,6 @@
     background: #00b800;
     color: #000;
   }
-
   .rojo {
     background: #4d0606;
   }
@@ -180,18 +180,16 @@
 <body>
 
 <h1>
-  Carnestoltes FINAL2
+  Carnestoltes FINAL3
   <span class="badge">ONLINE</span>
 </h1>
 
-<!-- Cámara / escaneo -->
 <div class="card">
   <button id="startBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
   <canvas id="framegrab"></canvas>
 </div>
 
-<!-- Panel con la última persona leída -->
 <div class="card" id="infoCard">
   <div class="row">
     <div class="label">Nom</div>
@@ -220,19 +218,18 @@
   <div class="footer-note" id="dataPagamentNote"></div>
 </div>
 
-<!-- Log debug -->
 <div class="card">
   <div id="debugLog">📹 Llista d'esdeveniments…</div>
 </div>
 
-<!-- ZXing (lector QR) -->
+<!-- 1. Intento principal -->
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
+<!-- 2. Backup (algunos navegadores exponen ZXing en otra ruta) -->
+<script src="https://unpkg.com/@zxing/library@latest"></script>
 
 <script>
-  // ===== CONFIG =====
   const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
-  // ===== ESTADO =====
   let scanning = false;
   let streamRef = null;
   let codeReader = null;
@@ -240,7 +237,6 @@
   let currentData = null;
   let lastShownQR = null;
 
-  // ===== DOM =====
   const startBtn = document.getElementById('startBtn');
   const preview  = document.getElementById('preview');
   const canvas   = document.getElementById('framegrab');
@@ -257,7 +253,6 @@
   const btnObjectesSI = document.getElementById('btnObjectesSI');
   const btnObjectesNO = document.getElementById('btnObjectesNO');
 
-  // ===== HELPERS UI =====
   function log(msg){
     console.log(msg);
     debugLog.textContent += "\n" + msg;
@@ -340,7 +335,6 @@
     renderButtonStates();
   }
 
-  // ===== API CALLS =====
   async function apiLookup(qr) {
     const url = API_BASE + "?action=lookup&qr=" + encodeURIComponent(qr);
     const res = await fetch(url);
@@ -361,7 +355,6 @@
     return res.json();
   }
 
-  // ===== ESCANEO LOOP =====
   async function onQRDetected(qrText) {
     if (qrText === lastShownQR) return;
     lastShownQR = qrText;
@@ -377,37 +370,46 @@
     }
   }
 
+  function initCodeReaderIfPossible() {
+    // intenta inicializar lector desde cualquiera de las dos libs
+    try {
+      if (!codeReader) {
+        if (typeof ZXing !== "undefined" && ZXing.BrowserMultiFormatReader) {
+          codeReader = new ZXing.BrowserMultiFormatReader();
+          log("ZXing BrowserMultiFormatReader inicialitzat ✅");
+        }
+      }
+    } catch (e) {
+      log("Error creant codeReader: " + e);
+    }
+  }
+
   async function scanLoop() {
     if (!scanning) return;
 
-    // si ZXing no está listo aún, reintenta luego
-    if (!codeReader && typeof ZXing !== "undefined" && ZXing.BrowserMultiFormatReader) {
-      codeReader = new ZXing.BrowserMultiFormatReader();
-      log("Lector ZXing inicialitzat ✅");
-    }
+    // cada frame comprobamos si ZXing ya está cargado
+    initCodeReaderIfPossible();
 
-    if (!codeReader) {
-      // ZXing aún cargando, espera al siguiente frame
-      requestAnimationFrame(scanLoop);
-      return;
-    }
+    if (codeReader) {
+      const w = preview.videoWidth;
+      const h = preview.videoHeight;
+      if (w && h) {
+        const ctx = canvas.getContext('2d');
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(preview, 0, 0, w, h);
 
-    const w = preview.videoWidth;
-    const h = preview.videoHeight;
-    if (w && h) {
-      const ctx = canvas.getContext('2d');
-      canvas.width = w;
-      canvas.height = h;
-      ctx.drawImage(preview, 0, 0, w, h);
-
-      try {
-        const result = await codeReader.decodeFromCanvas(canvas);
-        if (result && result.getText) {
-          onQRDetected(result.getText());
+        try {
+          const result = await codeReader.decodeFromCanvas(canvas);
+          if (result && result.getText) {
+            onQRDetected(result.getText());
+          }
+        } catch (err) {
+          // normal si no hay QR visible en este frame
         }
-      } catch (err) {
-        // normal si no hay QR en este frame
       }
+    } else {
+      log("⚠ ZXing encara no disponible...");
     }
 
     if (scanning) {
@@ -417,16 +419,18 @@
 
   async function startOrStop() {
     if (scanning) {
-        // parar
-        scanning = false;
-        startBtn.classList.remove('scanning');
-        startBtn.textContent = "ESCANEJAR QR";
-        if (streamRef) {
-          streamRef.getTracks().forEach(t => t.stop());
-          streamRef = null;
-        }
-        log("📷 Càmera aturada");
-        return;
+      // parar
+      scanning = false;
+      startBtn.classList.remove('scanning');
+      startBtn.textContent = "ESCANEJAR QR";
+
+      if (streamRef) {
+        streamRef.getTracks().forEach(t => t.stop());
+        streamRef = null;
+      }
+
+      log("📷 Càmera aturada");
+      return;
     }
 
     // iniciar
@@ -445,7 +449,7 @@
       await preview.play();
       log("📷 Càmera oberta");
 
-      // empezamos el bucle, que a su vez esperará a ZXing si aún no está
+      // arrancar bucle
       requestAnimationFrame(scanLoop);
 
     } catch (err) {
@@ -455,6 +459,7 @@
       scanning = false;
       startBtn.classList.remove('scanning');
       startBtn.textContent = "ESCANEJAR QR";
+
       if (streamRef) {
         streamRef.getTracks().forEach(t => t.stop());
         streamRef = null;
@@ -462,7 +467,6 @@
     }
   }
 
-  // ===== EVENTOS =====
   startBtn.addEventListener('click', startOrStop);
 
   btnPagat.addEventListener('click', async () => {
