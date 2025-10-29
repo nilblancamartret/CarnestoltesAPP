@@ -5,109 +5,44 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Carnestoltes CONTROL 🎭</title>
 <style>
-body {
-  font-family: system-ui, sans-serif;
-  background: #111;
-  color: #fff;
-  margin: 0;
-  padding: 1rem;
+body{
+  font-family:system-ui,sans-serif;background:#111;color:#fff;
+  margin:0;padding:1rem;
 }
-h1 {
-  text-align: center;
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-}
-.badge {
-  background: #0f0;
-  color: #000;
-  padding: .2rem .4rem;
-  border-radius: .3rem;
-  font-weight: 700;
-}
-.card {
-  background: #1e1e1e;
-  border-radius: 10px;
-  padding: 1rem;
-  box-shadow: 0 0 10px rgba(0,0,0,.6);
-  margin-bottom: 1rem;
-}
-button {
-  font-size: 1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 10px;
-  padding: .8rem 1rem;
-}
-#scanBtn {
-  width: 100%;
-  background: #0070f3;
-  color: #fff;
-}
-#scanBtn.active { background: #00b800; color: #000; }
-video {
-  width: 100%;
-  border-radius: 10px;
-  background: #000;
-  min-height: 220px;
-}
-#debugLog {
-  font-size: .75rem;
-  color: #0f0;
-  font-family: monospace;
-  white-space: pre-line;
-}
+h1{text-align:center;font-size:1.2rem;margin-bottom:1rem;}
+.badge{background:#0f0;color:#000;padding:.2rem .4rem;border-radius:.3rem;font-weight:700;}
+.card{background:#1e1e1e;border-radius:10px;padding:1rem;box-shadow:0 0 10px rgba(0,0,0,.6);margin-bottom:1rem;}
+button{font-size:1rem;font-weight:600;border:none;border-radius:10px;padding:.8rem 1rem;}
+#scanBtn{width:100%;background:#0070f3;color:#fff;}
+#scanBtn.active{background:#00b800;color:#000;}
+video{width:100%;border-radius:10px;background:#000;min-height:220px;}
+#debugLog{font-size:.75rem;color:#0f0;font-family:monospace;white-space:pre-line;}
 
 /* Popup */
-#modalOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.8);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
+#modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;
+  align-items:center;justify-content:center;z-index:100;}
+#modalCard{background:#1e1e1e;border-radius:12px;padding:1rem;max-width:320px;width:100%;
+  text-align:left;box-shadow:0 0 40px rgba(0,0,0,.8);}
+#modalTitle{font-size:1.1rem;margin-bottom:.5rem;font-weight:600;}
+.modalRowLabel{color:#ccc;font-size:.85rem;}
+.modalRowValue{font-weight:600;margin-bottom:.5rem;}
+.modalSmallNote{color:#aaa;font-size:.8rem;margin-top:.25rem;}
+.state-btn{width:100%;margin-top:.5rem;padding:1rem;border-radius:10px;font-weight:600;}
+.redState{background:#b80000;color:#fff;}
+.greenState{background:#00b800;color:#000;}
+#modalCloseBtn{margin-top:.75rem;background:#0070f3;color:#fff;width:100%;}
+.errorModal{border:2px solid #ff4d4d;background:#400;text-align:center;}
+
+/* Spinner */
+#spinnerOverlay{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.6);z-index:99;
 }
-#modalCard {
-  background: #1e1e1e;
-  border-radius: 12px;
-  padding: 1rem;
-  max-width: 320px;
-  width: 100%;
-  text-align: left;
-  box-shadow: 0 0 40px rgba(0,0,0,.8);
+.spinner{
+  border:6px solid #333;border-top:6px solid #00ff99;border-radius:50%;
+  width:60px;height:60px;animation:spin 1s linear infinite;
 }
-#modalTitle {
-  font-size: 1.1rem;
-  margin-bottom: .5rem;
-  font-weight: 600;
-}
-.modalRowLabel { color: #ccc; font-size: .85rem; }
-.modalRowValue { font-weight: 600; margin-bottom: .5rem; }
-.modalSmallNote {
-  color: #aaa;
-  font-size: .8rem;
-  margin-top: .25rem;
-}
-.state-btn {
-  width: 100%;
-  margin-top: .5rem;
-  padding: 1rem;
-  border-radius: 10px;
-  font-weight: 600;
-}
-.redState { background: #b80000; color: #fff; }
-.greenState { background: #00b800; color: #000; }
-#modalCloseBtn {
-  margin-top: .75rem;
-  background: #0070f3;
-  color: #fff;
-  width: 100%;
-}
-.errorModal {
-  border: 2px solid #ff4d4d;
-  background: #400;
-  text-align: center;
-}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -123,7 +58,10 @@ video {
   <div id="debugLog">📹 Preparat…</div>
 </div>
 
-<!-- Modal -->
+<!-- Spinner -->
+<div id="spinnerOverlay"><div class="spinner"></div></div>
+
+<!-- Popup -->
 <div id="modalOverlay">
   <div id="modalCard">
     <div id="modalTitle">Participant</div>
@@ -143,17 +81,16 @@ video {
 </div>
 
 <script>
-const API_BASE = "https://script.google.com/macros/s/AKfycbw_D0Gf5yja1d8hgIULvsdS8tKjGyt2W1P_8G6qzPttiNIsd3UpCADV89yONey3H1Z4uw/exec";
+const API_BASE="https://script.google.com/macros/s/AKfycbw_D0Gf5yja1d8hgIULvsdS8tKjGyt2W1P_8G6qzPttiNIsd3UpCADV89yONey3H1Z4uw/exec";
 
-// === STATE ===
-let scanning=false, locked=false, streamRef=null, detector=null;
-let currentQR=null, currentData=null;
-let localPagat=null, localObjectes=null;
+let scanning=false,locked=false,streamRef=null,detector=null;
+let currentQR=null,currentData=null;
+let localPagat=null,localObjectes=null;
 
-// === DOM ===
 const scanBtn=document.getElementById('scanBtn');
 const preview=document.getElementById('preview');
 const debugLog=document.getElementById('debugLog');
+const spinner=document.getElementById('spinnerOverlay');
 const modalOverlay=document.getElementById('modalOverlay');
 const modalCard=document.getElementById('modalCard');
 const modalNom=document.getElementById('modalNom');
@@ -162,26 +99,23 @@ const modalToggleObjectes=document.getElementById('modalToggleObjectes');
 const modalCloseBtn=document.getElementById('modalCloseBtn');
 const modalExtraInfo=document.getElementById('modalExtraInfo');
 
-// === UTILS ===
-function log(m){ console.log(m); debugLog.textContent+="\n"+m; debugLog.scrollTop=debugLog.scrollHeight; }
-function openModal(){ modalOverlay.style.display="flex"; }
-function closeModal(){ modalOverlay.style.display="none"; modalCard.classList.remove('errorModal'); }
+function log(m){console.log(m);debugLog.textContent+="\n"+m;debugLog.scrollTop=debugLog.scrollHeight;}
+function showSpinner(show){spinner.style.display=show?"flex":"none";}
+function openModal(){modalOverlay.style.display="flex";}
+function closeModal(){modalOverlay.style.display="none";modalCard.classList.remove('errorModal');}
 
-// === API ===
-async function safeFetchJSON(url){
-  try{ const r=await fetch(url); const t=await r.text(); try{return JSON.parse(t);}catch{return null;} }catch{return null;}
-}
-async function apiLookup(qr){ return await safeFetchJSON(API_BASE+"?action=lookup&qr="+encodeURIComponent(qr)); }
-async function apiSetPagat(qr,val){ return await safeFetchJSON(API_BASE+"?action=setPagat&qr="+encodeURIComponent(qr)+"&value="+encodeURIComponent(val)); }
-async function apiSetObjectes(qr,val){ return await safeFetchJSON(API_BASE+"?action=setObjectes&qr="+encodeURIComponent(qr)+"&value="+encodeURIComponent(val)); }
+/* API helpers */
+async function safeFetchJSON(u){try{const r=await fetch(u);return await r.json();}catch{return null;}}
+async function apiLookup(qr){return await safeFetchJSON(API_BASE+"?action=lookup&qr="+encodeURIComponent(qr));}
+async function apiSetPagat(qr,val){return await safeFetchJSON(API_BASE+"?action=setPagat&qr="+encodeURIComponent(qr)+"&value="+encodeURIComponent(val));}
+async function apiSetObjectes(qr,val){return await safeFetchJSON(API_BASE+"?action=setObjectes&qr="+encodeURIComponent(qr)+"&value="+encodeURIComponent(val));}
 
-// === CAMERA ===
+/* Camera */
 async function startStop(){
   if(scanning){
     scanning=false;
-    if(streamRef){streamRef.getTracks().forEach(t=>t.stop()); streamRef=null;}
-    scanBtn.classList.remove('active');
-    scanBtn.textContent="ESCANEJAR QR";
+    if(streamRef){streamRef.getTracks().forEach(t=>t.stop());streamRef=null;}
+    scanBtn.classList.remove('active');scanBtn.textContent="ESCANEJAR QR";
     return;
   }
   scanning=true;
@@ -189,60 +123,48 @@ async function startStop(){
   scanBtn.textContent="CAM ACTIVA (TOCA PER ATURAR)";
   try{
     streamRef=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
-    preview.srcObject=streamRef;
-    await preview.play();
+    preview.srcObject=streamRef;await preview.play();
     if('BarcodeDetector'in window){
       detector=new BarcodeDetector({formats:['qr_code']});
       requestAnimationFrame(scanLoop);
-    } else alert("Aquest dispositiu no suporta lector QR.");
-  }catch(e){alert("Error càmera: "+e.message); scanning=false;}
+    }else alert("Aquest dispositiu no suporta lector QR.");
+  }catch(e){alert("Error càmera: "+e.message);scanning=false;}
 }
 
 async function scanLoop(){
-  if(!scanning||locked) return;
+  if(!scanning||locked)return;
   const w=preview.videoWidth,h=preview.videoHeight;
   if(w&&h){
-    const c=document.createElement('canvas'); c.width=w;c.height=h;
-    const ctx=c.getContext('2d'); ctx.drawImage(preview,0,0,w,h);
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    const ctx=c.getContext('2d');ctx.drawImage(preview,0,0,w,h);
     try{
       const codes=await detector.detect(c);
       if(codes.length>0){
         const val=codes[0].rawValue;
-        if(val){ await handleDetectedQR(val.trim()); return; }
+        if(val){await handleDetectedQR(val.trim());return;}
       }
     }catch{}
   }
-  if(scanning&&!locked) requestAnimationFrame(scanLoop);
+  if(scanning&&!locked)requestAnimationFrame(scanLoop);
 }
 
-// === HANDLE QR ===
-function isValidQRFormat(qr){
-  return /^CARNESTOLTES-\d{1,4}$/i.test(qr);
-}
+/* QR Logic */
+function isValidQRFormat(qr){return /^CARNESTOLTES-\d{1,4}$/i.test(qr);}
 
 async function handleDetectedQR(qr){
-  locked=true; scanning=false;
-  if(streamRef){streamRef.getTracks().forEach(t=>t.stop()); streamRef=null;}
-  scanBtn.classList.remove('active');
-  scanBtn.textContent="ESCANEJAR QR";
+  locked=true;scanning=false;
+  if(streamRef){streamRef.getTracks().forEach(t=>t.stop());streamRef=null;}
+  scanBtn.classList.remove('active');scanBtn.textContent="ESCANEJAR QR";
+  currentQR=qr;log("QR detectat: "+qr);
 
-  currentQR=qr;
-  log("QR detectat: "+qr);
+  if(!isValidQRFormat(qr)){showErrorModal("QR incorrecte",qr);return;}
 
-  // Validació local
-  if(!isValidQRFormat(qr)){
-    showErrorModal("QR incorrecte", qr);
-    return;
-  }
-
-  // Consulta a la API
+  showSpinner(true);
   currentData=await apiLookup(qr);
-  if(!currentData||!currentData.found){
-    showErrorModal("QR no trobat", qr);
-    return;
-  }
+  showSpinner(false);
 
-  // Mostrar info
+  if(!currentData||!currentData.found){showErrorModal("QR no trobat",qr);return;}
+
   localPagat=currentData.pagat;
   localObjectes=currentData.objectesEntregats;
   renderModal();
@@ -258,7 +180,7 @@ function showErrorModal(title,qrtext){
   openModal();
 }
 
-// === MODAL ===
+/* Modal */
 function renderModal(){
   modalCard.classList.remove('errorModal');
   modalTogglePagat.style.display="block";
@@ -266,8 +188,8 @@ function renderModal(){
   modalNom.textContent=currentData.nom||"(sense nom)";
   updateButtonVisuals();
   let html="";
-  if(currentData.dataPagament) html+=`<div class="modalSmallNote">Data pagament: ${currentData.dataPagament}</div>`;
-  if(currentData.ultimScan) html+=`<div class="modalSmallNote">Últim escaneig: ${currentData.ultimScan}</div>`;
+  if(currentData.dataPagament)html+=`<div class="modalSmallNote">Data pagament: ${currentData.dataPagament}</div>`;
+  if(currentData.ultimScan)html+=`<div class="modalSmallNote">Últim escaneig: ${currentData.ultimScan}</div>`;
   modalExtraInfo.innerHTML=html;
 }
 
@@ -277,15 +199,22 @@ function updateButtonVisuals(){
   modalToggleObjectes.textContent=localObjectes?"OBJECTES DONATS 🎁":"OBJECTES PENDENTS 📦";
   modalToggleObjectes.className="state-btn "+(localObjectes?"greenState":"redState");
 }
+
+/* Events */
 modalTogglePagat.addEventListener('click',()=>{localPagat=!localPagat;updateButtonVisuals();});
 modalToggleObjectes.addEventListener('click',()=>{localObjectes=!localObjectes;updateButtonVisuals();});
+
 modalCloseBtn.addEventListener('click',async()=>{
   if(currentData&&currentQR&&!modalCard.classList.contains('errorModal')){
-    if(localPagat!==currentData.pagat) await apiSetPagat(currentQR,localPagat?"SI":"NO");
-    if(localObjectes!==currentData.objectesEntregats) await apiSetObjectes(currentQR,localObjectes?"SI":"NO");
+    // enviar només si han canviat
+    const promises=[];
+    if(localPagat!==currentData.pagat)promises.push(apiSetPagat(currentQR,localPagat?"SI":"NO"));
+    if(localObjectes!==currentData.objectesEntregats)promises.push(apiSetObjectes(currentQR,localObjectes?"SI":"NO"));
+    if(promises.length>0)await Promise.all(promises);
   }
-  closeModal(); locked=false; startStop();
+  closeModal();locked=false;startStop();
 });
+
 scanBtn.addEventListener('click',startStop);
 </script>
 </body>
