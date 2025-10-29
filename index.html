@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Carnestoltes FINAL6 ✅</title>
+<title>Carnestoltes PROD FINAL ✅</title>
 <style>
   body {
     font-family: system-ui, sans-serif;
-    background: #111;
+    background-color: #111;
     color: #fff;
     margin: 0;
     padding: 1rem;
@@ -20,8 +20,8 @@
     text-align: center;
     display: flex;
     justify-content: center;
-    flex-wrap: wrap;
     gap: .5rem;
+    flex-wrap: wrap;
     margin: 0 0 1rem;
   }
 
@@ -43,7 +43,7 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.6);
   }
 
-  #startBtn {
+  #scanBtn {
     width: 100%;
     font-size: 1.1rem;
     font-weight: 600;
@@ -55,7 +55,7 @@
     margin-bottom: 1rem;
     text-align:center;
   }
-  #startBtn.scanning {
+  #scanBtn.active {
     background: #00b800;
     color: #000;
   }
@@ -69,7 +69,7 @@
     display: block;
   }
 
-  #captureCanvas { display:none; }
+  canvas { display:none; }
 
   #debugLog {
     font-size: .8rem;
@@ -82,7 +82,10 @@
     overflow-y: auto;
   }
 
-  #infoCard { display:none; }
+  /* Tarjeta de info del usuario escaneado */
+  #infoCard {
+    display:none;
+  }
 
   .row {
     display: flex;
@@ -91,11 +94,13 @@
     margin-bottom: .75rem;
     flex-wrap: wrap;
   }
+
   .label {
     font-size: .8rem;
     color: #aaa;
     flex: 0 0 40%;
   }
+
   .value {
     font-size: 1rem;
     font-weight: 600;
@@ -104,6 +109,7 @@
     text-align: right;
     word-break: break-word;
   }
+
   .qr-code-value {
     font-size: .8rem;
     font-weight: 400;
@@ -156,19 +162,11 @@
     text-align: center;
   }
 
-  .verde {
-    background: #064d06;
-  }
-  .verde.active {
-    background: #00b800;
-    color: #000;
-  }
-  .rojo {
-    background: #4d0606;
-  }
-  .rojo.active {
-    background: #d60000;
-  }
+  .verde { background: #064d06; }
+  .verde.active { background: #00b800; color:#000; }
+
+  .rojo { background: #4d0606; }
+  .rojo.active { background: #d60000; }
 
   .footer-note {
     font-size: .7rem;
@@ -181,16 +179,18 @@
 <body>
 
 <h1>
-  Carnestoltes FINAL6
+  Carnestoltes PROD FINAL
   <span class="badge">ONLINE</span>
 </h1>
 
+<!-- Sección cámara -->
 <div class="card">
-  <button id="startBtn">ESCANEJAR QR</button>
+  <button id="scanBtn">ESCANEJAR QR</button>
   <video id="preview" playsinline autoplay muted></video>
-  <canvas id="captureCanvas"></canvas>
+  <canvas id="framegrab"></canvas>
 </div>
 
+<!-- Panel persona -->
 <div class="card" id="infoCard">
   <div class="row">
     <div class="label">Nom</div>
@@ -219,27 +219,31 @@
   <div class="footer-note" id="dataPagamentNote"></div>
 </div>
 
+<!-- Log -->
 <div class="card">
-  <div id="debugLog">📷 Llista d'esdeveniments…</div>
+  <div id="debugLog">📹 Llista d'esdeveniments…</div>
 </div>
 
-<!-- ZXing UMD global -->
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
+<!-- ZXing tal como en ULTRALIGHT -->
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
 
 <script>
+  // === CONFIG ===
   const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
+  // === ESTADO ===
   let scanning = false;
   let streamRef = null;
-  let reader = null; // BrowserQRCodeReader
-  let lastShownQR = null;
+  let codeReader = null;
+
   let currentQR = null;
   let currentData = null;
-  let tickCount = 0; // para debug
+  let lastShownQR = null;
 
-  const startBtn = document.getElementById('startBtn');
-  const preview  = document.getElementById('preview');
-  const captureCanvas = document.getElementById('captureCanvas');
+  // === DOM ===
+  const scanBtn = document.getElementById('scanBtn');
+  const preview = document.getElementById('preview');
+  const canvas  = document.getElementById('framegrab');
   const debugLog = document.getElementById('debugLog');
 
   const infoCard = document.getElementById('infoCard');
@@ -253,6 +257,7 @@
   const btnObjectesSI = document.getElementById('btnObjectesSI');
   const btnObjectesNO = document.getElementById('btnObjectesNO');
 
+  // === HELPERS UI ===
   function log(msg){
     console.log(msg);
     debugLog.textContent += "\n" + msg;
@@ -335,6 +340,7 @@
     renderButtonStates();
   }
 
+  // === API SHEETS ===
   async function apiLookup(qr) {
     const url = API_BASE + "?action=lookup&qr=" + encodeURIComponent(qr);
     const res = await fetch(url);
@@ -343,25 +349,28 @@
 
   async function apiSetPagat(qr, value) {
     const url = API_BASE + "?action=setPagat&qr=" + encodeURIComponent(qr) +
-      "&value=" + encodeURIComponent(value);
+                "&value=" + encodeURIComponent(value);
     const res = await fetch(url);
     return res.json();
   }
 
   async function apiSetObjectes(qr, value) {
     const url = API_BASE + "?action=setObjectes&qr=" + encodeURIComponent(qr) +
-      "&value=" + encodeURIComponent(value);
+                "&value=" + encodeURIComponent(value);
     const res = await fetch(url);
     return res.json();
   }
 
+  // === MANEJO DEL QR DETECTADO ===
   async function onQRDetected(qrText) {
+    // para no spamear el mismo código 50 veces por segundo
     if (qrText === lastShownQR) return;
     lastShownQR = qrText;
 
     log("QR detectat: " + qrText);
     currentQR = qrText;
 
+    // pedir datos a Google Sheets
     try {
       currentData = await apiLookup(qrText);
       renderInfo();
@@ -370,92 +379,84 @@
     }
   }
 
-  async function scanTick() {
+  // === LOOP DE ESCANEO (ESTILO ULTRALIGHT) ===
+  async function frameLoop() {
     if (!scanning) return;
 
-    tickCount += 1;
-    if (tickCount % 10 === 0) {
-      log("tick " + tickCount + " escanejant...");
-    }
+    const w = preview.videoWidth;
+    const h = preview.videoHeight;
+    if (w && h) {
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(preview, 0, 0, w, h);
 
-    // init lector si hace falta
-    if (!reader && window.ZXing && ZXing.BrowserQRCodeReader) {
-      reader = new ZXing.BrowserQRCodeReader();
-      log("ZXing BrowserQRCodeReader inicialitzat ✅");
-    }
-
-    if (reader) {
-      const w = preview.videoWidth;
-      const h = preview.videoHeight;
-      if (w && h) {
-        // volcar frame actual del vídeo al canvas
-        captureCanvas.width = w;
-        captureCanvas.height = h;
-        const ctx = captureCanvas.getContext('2d');
-        ctx.drawImage(preview, 0, 0, w, h);
-
-        // crear imagen temporal a partir del canvas
-        const img = new Image();
-        img.src = captureCanvas.toDataURL("image/png");
-
-        try {
-          const result = await reader.decodeFromImage(img);
-          if (result && result.text) {
-            onQRDetected(result.text);
-          }
-        } catch (err) {
-          // sin QR claro en este frame: silencio
+      try {
+        const result = await codeReader.decodeFromCanvas(canvas);
+        if (result && result.getText) {
+          onQRDetected(result.getText());
         }
+      } catch (err) {
+        // normal que falle si no hay QR en ese frame
       }
-    } else {
-      log("⚠ ZXing encara no disponible…");
     }
 
     if (scanning) {
-      setTimeout(scanTick, 200);
+      requestAnimationFrame(frameLoop);
     }
   }
 
-  async function startOrStop() {
+  // === CONTROL CAMARA ===
+  async function startStop() {
     if (scanning) {
+      // parar
       scanning = false;
-      startBtn.classList.remove('scanning');
-      startBtn.textContent = "ESCANEJAR QR";
+      scanBtn.classList.remove('active');
+      scanBtn.textContent = "ESCANEJAR QR";
 
       if (streamRef) {
         streamRef.getTracks().forEach(t => t.stop());
         streamRef = null;
       }
 
-      log("📷 Càmera aturada");
+      log("📹 Càmera aturada");
       return;
     }
 
+    // iniciar
     scanning = true;
-    startBtn.classList.add('scanning');
-    startBtn.textContent = "CAM ACTIVA (TOCA PER ATURAR)";
-    log("📷 Obrint càmera...");
+    scanBtn.classList.add('active');
+    scanBtn.textContent = "CAM ACTIVA (TOCA PER ATURAR)";
+    log("📹 Obrint càmera...");
 
     try {
+      // pedir cámara (igual que hiciste en ULTRALIGHT)
       streamRef = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: false
       });
 
+      // poner vídeo en <video>
       preview.srcObject = streamRef;
       await preview.play();
-      log("📷 Càmera oberta");
+      log("📹 Càmera oberta");
 
-      tickCount = 0;
-      scanTick();
+      // crear el lector QR si aún no existe
+      if (!codeReader) {
+        codeReader = new ZXing.BrowserMultiFormatReader();
+        log("ZXing inicialitzat ✅");
+      }
+
+      // arrancar bucle que intenta leer en cada frame
+      requestAnimationFrame(frameLoop);
 
     } catch (err) {
       log("ERROR càmera: " + err.name + " / " + err.message);
       alert("No puc obrir càmera: " + err.message);
 
       scanning = false;
-      startBtn.classList.remove('scanning');
-      startBtn.textContent = "ESCANEJAR QR";
+      scanBtn.classList.remove('active');
+      scanBtn.textContent = "ESCANEJAR QR";
 
       if (streamRef) {
         streamRef.getTracks().forEach(t => t.stop());
@@ -464,7 +465,8 @@
     }
   }
 
-  startBtn.addEventListener('click', startOrStop);
+  // === EVENTOS BOTONES ===
+  scanBtn.addEventListener('click', startStop);
 
   btnPagat.addEventListener('click', async () => {
     if (!currentQR) return;
@@ -482,7 +484,7 @@
 
   btnObjectesSI.addEventListener('click', async () => {
     if (!currentQR) return;
-    await apiSetObjectes(currentQR, "SI";
+    await apiSetObjectes(currentQR, "SI");
     currentData = await apiLookup(currentQR);
     renderInfo();
   });
