@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Carnestoltes v3 ✅</title>
+  <title>Carnestoltes v4 ✅</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -18,7 +18,21 @@
       margin: 0 0 1rem;
       color: #fff;
       text-align: center;
+      display: flex;
+      justify-content: center;
+      gap: .5rem;
+      flex-wrap: wrap;
     }
+    .badge {
+      background: #0a0;
+      color: #000;
+      font-size: .8rem;
+      font-weight: 700;
+      border-radius: .4rem;
+      padding: .1rem .4rem;
+      line-height: 1.2;
+    }
+
     .scan-section,
     .info-card {
       background: #1e1e1e;
@@ -27,6 +41,7 @@
       margin-bottom: 1rem;
       box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
+
     button.main-scan {
       width: 100%;
       font-size: 1.1rem;
@@ -41,6 +56,7 @@
       background: #0070f3;
       color: #fff;
     }
+
     video {
       width: 100%;
       border-radius: 10px;
@@ -49,7 +65,22 @@
       min-height: 200px;
       object-fit: cover;
     }
+
     canvas { display:none; }
+
+    #debugLog {
+      font-size: .7rem;
+      color: #888;
+      white-space: pre-line;
+      background: #000;
+      padding: .5rem;
+      border-radius: 6px;
+      max-height: 6rem;
+      overflow-y: auto;
+      margin-top: .75rem;
+      min-height: 1.5rem;
+    }
+
     .row {
       display: flex;
       justify-content: space-between;
@@ -133,22 +164,18 @@
       text-align: center;
       margin-top: 2rem;
     }
-    #debugLog {
-      font-size: .7rem;
-      color: #888;
-      white-space: pre-line;
-      background: #000;
-      padding: .5rem;
-      border-radius: 6px;
-      max-height: 6rem;
-      overflow-y: auto;
-      margin-top: .75rem;
+
+    .info-card {
+      display:none;
     }
   </style>
 </head>
 <body>
 
-  <h1>Carnestoltes v3 ✅</h1>
+  <h1>
+    Carnestoltes v4
+    <span class="badge">BETA</span>
+  </h1>
 
   <div class="scan-section">
     <button id="scanBtn" class="main-scan">ESCANEJAR QR</button>
@@ -157,7 +184,7 @@
     <div id="debugLog"></div>
   </div>
 
-  <div class="info-card" id="infoCard" style="display:none;">
+  <div class="info-card" id="infoCard">
     <div class="row">
       <div class="label">Nom</div>
       <div class="value" id="nomValue">-</div>
@@ -185,10 +212,13 @@
     <div class="footer-note" id="dataPagamentNote"></div>
   </div>
 
+  <!-- lector QR -->
   <script src="https://unpkg.com/@zxing/browser@latest"></script>
   <script>
+    // *** CONFIG ***
     const API_BASE = "https://script.google.com/macros/s/AKfycbzorimMb3iHXg0_mp9ZOt9G-Z56HQ--CM2aiE3iSVpSkgy7f6aBrZuNHSSjM9Asvd5z/exec";
 
+    // Estado global
     let scanning = false;
     let streamRef = null;
     let currentQR = null;
@@ -196,6 +226,7 @@
 
     const codeReader = new ZXing.BrowserMultiFormatReader();
 
+    // DOM refs
     const scanBtn = document.getElementById('scanBtn');
     const preview = document.getElementById('preview');
     const canvas = document.getElementById('framegrab');
@@ -217,6 +248,7 @@
       debugLog.textContent += msg + "\n";
     }
 
+    // ----- RENDER UI -----
     function renderButtonStates() {
       if (currentData && currentData.pagat === true) {
         btnPagat.classList.add('active');
@@ -290,6 +322,7 @@
       renderButtonStates();
     }
 
+    // ----- API CALLS -----
     async function apiLookup(qr) {
       const url = `${API_BASE}?action=lookup&qr=${encodeURIComponent(qr)}`;
       const res = await fetch(url);
@@ -308,6 +341,7 @@
       return res.json();
     }
 
+    // ----- QR HANDLING -----
     async function handleScannedCode(qrText){
       log("QR detectat: " + qrText);
       stopScanning();
@@ -317,7 +351,7 @@
       renderInfoCard();
     }
 
-    // bucle manual: copiamos frame del <video> a <canvas>, ZXing intenta leerlo
+    // bucle frame-a-frame como v3
     async function frameLoop() {
       if (!scanning) return;
 
@@ -336,7 +370,7 @@
             return;
           }
         } catch (err) {
-          // normal: si no hay QR visible lanza error
+          // normal si aún no hay QR
         }
       }
 
@@ -345,25 +379,27 @@
       }
     }
 
+    // ----- CAMERA CONTROL (misma idea que test_cam) -----
     async function startScanning(){
       if (scanning) return;
       scanning = true;
       scanBtn.classList.add('active');
       scanBtn.textContent = "ESCANEJANT...";
 
-      log("Obrint càmera...");
+      log("Intentant obrir càmera (com test_cam)...");
       try {
         streamRef = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal:"environment" } },
+          video: { facingMode: { ideal: "environment" } },
           audio: false
         });
         preview.srcObject = streamRef;
         await preview.play().catch(e => log("video.play error: " + e));
-        log("Càmera oberta, iniciant lectura frame a frame...");
+        log("Càmera oberta ✅ Iniciant lectura...");
+
         requestAnimationFrame(frameLoop);
 
       } catch(err){
-        log("ERROR obrint càmera: " + err.name + " / " + err.message);
+        log("ERROR getUserMedia: " + err.name + " / " + err.message);
         alert("No puc obrir càmera: " + err.message);
         stopScanning();
       }
@@ -381,6 +417,7 @@
       }
     }
 
+    // ----- UI EVENTS -----
     scanBtn.addEventListener('click', () => {
       if (scanning) {
         stopScanning();
